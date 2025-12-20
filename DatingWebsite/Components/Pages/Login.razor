@@ -1,0 +1,73 @@
+﻿@page "/login"
+@rendermode InteractiveServer
+@inject IAuthService AuthService
+
+<div style="max-width: 500px; margin: 80px auto;">
+    <div style="background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); overflow: hidden;">
+        <!-- Заголовок -->
+        <div style="background: #e75480; color: white; padding: 25px 30px;">
+            <h2 style="margin: 0; font-size: 28px;">Вход в систему</h2>
+        </div>
+
+        <!-- Форма -->
+        <div style="padding: 30px;">
+            <form @onsubmit="HandleLogin">
+                <!-- Email -->
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Email</label>
+                    <input type="email" @bind="email" required
+                           style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;" />
+                </div>
+
+                <!-- Пароль -->
+                <div style="margin-bottom: 30px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Пароль</label>
+                    <input type="password" @bind="password" required
+                           style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;" />
+                </div>
+
+                <!-- Сообщение об ошибке -->
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <div style="background: #f8d7da; color: #721c24; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #f5c6cb;">
+                        @errorMessage
+                    </div>
+                }
+
+                <!-- Кнопки -->
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <button type="submit"
+                            style="background: #e75480; color: white; border: none; padding: 15px; border-radius: 8px; font-size: 18px; font-weight: bold; cursor: pointer;">
+                        <span style="margin-right: 10px;">🔑</span>
+                        Войти
+                    </button>
+
+                    <NavLink href="/register" style="text-align: center; color: #e75480; text-decoration: none; padding: 10px;">
+                        Нет аккаунта? Зарегистрироваться
+                    </NavLink>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string email = "";
+    private string password = "";
+    private string errorMessage = "";
+
+    private async Task HandleLogin()
+    {
+        errorMessage = "";
+        var user = await AuthService.LoginAsync(email, password);
+
+        if (user != null)
+        {
+            // Вход успешен - пользователь будет автоматически перенаправлен
+        }
+        else
+        {
+            errorMessage = "Неверный email или пароль";
+        }
+    }
+}

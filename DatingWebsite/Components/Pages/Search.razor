@@ -1,0 +1,121 @@
+﻿@page "/search"
+@rendermode InteractiveServer
+@inject IUserService UserService
+@inject IAuthService AuthService
+
+<div style="max-width: 1200px; margin: 30px auto;">
+    <div style="background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); overflow: hidden; margin-bottom: 30px;">
+        <div style="padding: 25px 30px; background: #f8f9fa; border-bottom: 1px solid #eee;">
+            <h2 style="margin: 0 0 20px 0; color: #2c3e50;">Поиск людей</h2>
+
+            <!-- Поисковая строка -->
+            <div style="display: flex; gap: 15px;">
+                <input type="text" placeholder="Поиск по имени, фамилии..."
+                       @bind="searchTerm" @bind:event="oninput"
+                       style="flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;" />
+
+                <select @bind="selectedInterest" style="padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;">
+                    <option value="">Все интересы</option>
+                    @foreach (var interest in interests)
+                    {
+                        <option value="@interest.Name">@interest.Name</option>
+                    }
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Результаты поиска -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px;">
+        @foreach (var user in filteredUsers)
+        {
+            <div style="background: white; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); overflow: hidden;">
+                <div style="padding: 25px;">
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <div style="width: 60px; height: 60px; background: #e75480; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-right: 15px;">
+                            @user.FirstName[0]@user.LastName[0]
+                        </div>
+                        <div>
+                            <div style="font-size: 18px; font-weight: bold; color: #2c3e50;">
+                                @user.LastName @user.FirstName
+                            </div>
+                            <div style="color: #666; font-size: 14px;">@user.Age лет</div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(user.Description))
+                    {
+                        <div style="color: #666; margin-bottom: 15px; line-height: 1.5;">
+                            @(user.Description.Length > 100 ? user.Description.Substring(0, 100) + "..." : user.Description)
+                        </div>
+                    }
+
+                    <div style="margin-bottom: 15px;">
+                        <div style="color: #666; font-size: 14px; margin-bottom: 5px;">Ищет:</div>
+                        <div style="background: #e75480; color: white; padding: 5px 12px; border-radius: 20px; display: inline-block; font-size: 14px;">
+                            @user.LookingFor
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(user.Interests))
+                    {
+                        <div style="margin-bottom: 20px;">
+                            <div style="color: #666; font-size: 14px; margin-bottom: 5px;">Интересы:</div>
+                            <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                                @foreach (var interest in user.Interests.Split(", ").Take(3))
+                                {
+                                    <span style="background: #17a2b8; color: white; padding: 4px 10px; border-radius: 15px; font-size: 12px;">
+                                        @interest
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <button @onclick="() => StartChat(user.Id)"
+                            style="width: 100%; background: #e75480; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-size: 16px;">
+                        💬 Написать сообщение
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<User> allUsers = new();
+    private List<User> filteredUsers = new();
+    private List<Interest> interests = new();
+    private string searchTerm = "";
+    private string selectedInterest = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        allUsers = await UserService.GetUsersAsync();
+        interests = await UserService.GetInterestsAsync();
+        FilterUsers();
+    }
+
+    private void FilterUsers()
+    {
+        filteredUsers = allUsers
+            .Where(u => u.Id != AuthService.CurrentUser?.Id)
+            .Where(u => string.IsNullOrEmpty(searchTerm) ||
+                       u.FirstName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                       u.LastName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                       u.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+            .Where(u => string.IsNullOrEmpty(selectedInterest) ||
+                       (u.Interests != null && u.Interests.Contains(selectedInterest)))
+            .ToList();
+    }
+
+    private async Task StartChat(int userId)
+    {
+        if (AuthService.CurrentUser != null)
+        {
+            // Создаем чат с пользователем
+            await UserService.GetOrCreateChatAsync(AuthService.CurrentUser.Id, userId);
+            // Навигация через NavLink уже в кнопке
+        }
+    }
+}

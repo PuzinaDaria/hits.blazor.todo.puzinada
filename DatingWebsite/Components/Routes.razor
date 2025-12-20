@@ -1,0 +1,22 @@
+﻿@using Microsoft.AspNetCore.Components.Routing
+@using DatingWebsite.Components.Layout
+@using DatingWebsite.Components.Pages
+
+<Router AppAssembly="@typeof(Routes).Assembly" AdditionalAssemblies="new[] { typeof(Home).Assembly }">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <PageTitle>Не найдено</PageTitle>
+        <LayoutView Layout="@typeof(MainLayout)">
+            <div class="container mt-5">
+                <div class="alert alert-danger">
+                    <h4>404 - Страница не найдена</h4>
+                    <p>Запрашиваемая страница не существует.</p>
+                    <NavLink href="/" class="btn btn-primary">На главную</NavLink>
+                </div>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>

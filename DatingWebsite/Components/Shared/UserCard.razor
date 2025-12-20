@@ -1,0 +1,65 @@
+﻿@using DatingWebsite.Data.Models
+@rendermode InteractiveServer
+
+<div class="card user-card shadow-soft hover-shadow">
+    <div class="card h-100 shadow-sm">
+        <div class="card-body">
+            <div class="d-flex align-items-start mb-3">
+                <div class="flex-grow-1">
+                    <h5 class="card-title mb-1">
+                        <NavLink class="text-decoration-none text-dark" href="@($"/user/{User.Id}")">
+                            @User.LastName @User.FirstName
+                        </NavLink>
+                    </h5>
+                    <div class="d-flex align-items-center mb-2">
+                        <span class="badge bg-primary me-2">@User.Age лет</span>
+                        <span class="badge bg-secondary">Ищет: @User.LookingFor</span>
+                    </div>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(User.Description))
+            {
+                <p class="card-text text-muted mb-3" style="font-size: 0.9rem;">
+                    @(User.Description.Length > 100 ? User.Description.Substring(0, 100) + "..." : User.Description)
+                </p>
+            }
+
+            @if (!string.IsNullOrEmpty(User.Interests))
+            {
+                <div class="mb-3">
+                    <small class="text-muted">Интересы:</small>
+                    <div class="mt-1">
+                        @foreach (var interest in User.Interests.Split(',').Take(3))
+                        {
+                            if (!string.IsNullOrWhiteSpace(interest))
+                            {
+                                <span class="badge bg-light text-dark border me-1 mb-1">@interest.Trim()</span>
+                            }
+                        }
+                        @if (User.Interests.Split(',').Length > 3)
+                        {
+                            <span class="badge bg-light text-dark border">+@(User.Interests.Split(',').Length - 3)</span>
+                        }
+                    </div>
+                </div>
+            }
+
+            <div class="text-muted small mb-3">
+                <div><i class="bi bi-heart me-1"></i> Предпочтительный возраст: @User.PreferredAgeRange</div>
+            </div>
+        </div>
+        <div class="card-footer bg-transparent border-top-0">
+            <button class="btn btn-primary w-100" @onclick="() => OnMessageClick?.Invoke()">
+                <i class="bi bi-chat-dots me-2"></i>Написать сообщение
+            </button>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public required User User { get; set; }
+    [Parameter] public int? CurrentUserId { get; set; }
+    [Parameter] public Action? OnMessageClick { get; set; }
+    [Parameter] public Action? OnProfileClick { get; set; }
+}

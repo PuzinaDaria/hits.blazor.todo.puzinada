@@ -1,0 +1,89 @@
+﻿<div style="padding: 20px;">
+    <!-- Логотип -->
+    <div style="margin-bottom: 30px;">
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: bold; color: white;">
+            <span style="color: #e75480;">❤</span>
+            <span>DatingWebsite</span>
+        </div>
+    </div>
+
+    <!-- Навигация -->
+    <nav style="display: flex; flex-direction: column; gap: 10px;">
+        @if (AuthService.IsAuthenticated)
+        {
+            <!-- Информация о пользователе -->
+            <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="font-weight: bold;">@AuthService.CurrentUser?.FirstName @AuthService.CurrentUser?.LastName</div>
+                <div style="font-size: 14px; opacity: 0.8;">@AuthService.CurrentUser?.Email</div>
+            </div>
+
+            <!-- Ссылки -->
+            <a href="/" style="color: white; text-decoration: none; padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px;"
+               class="@(GetActiveClass("/"))">
+                <span>🏠</span>
+                <span>Главная</span>
+            </a>
+
+            <a href="/search" style="color: white; text-decoration: none; padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px;"
+               class="@(GetActiveClass("/search"))">
+                <span>🔍</span>
+                <span>Поиск</span>
+            </a>
+
+            <a href="/messages" style="color: white; text-decoration: none; padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px;"
+               class="@(GetActiveClass("/messages"))">
+                <span>💬</span>
+                <span>Сообщения</span>
+            </a>
+
+            <a href="/profile" style="color: white; text-decoration: none; padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px;"
+               class="@(GetActiveClass("/profile"))">
+                <span>👤</span>
+                <span>Профиль</span>
+            </a>
+        }
+        else
+        {
+            <a href="/" style="color: white; text-decoration: none; padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px;"
+               class="@(GetActiveClass("/"))">
+                <span>🏠</span>
+                <span>Главная</span>
+            </a>
+
+            <a href="/login" style="color: white; text-decoration: none; padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px;"
+               class="@(GetActiveClass("/login"))">
+                <span>🔑</span>
+                <span>Вход</span>
+            </a>
+
+            <a href="/register" style="color: white; text-decoration: none; padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px;"
+               class="@(GetActiveClass("/register"))">
+                <span>📝</span>
+                <span>Регистрация</span>
+            </a>
+        }
+    </nav>
+</div>
+
+@code {
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+    [Inject] private IAuthService AuthService { get; set; } = default!;
+
+    private string GetActiveClass(string path)
+    {
+        var currentPath = Navigation.Uri.Replace(Navigation.BaseUri, "");
+        if (string.IsNullOrEmpty(currentPath)) currentPath = "/";
+        return currentPath == path.Replace("/", "") ? "active-link" : "";
+    }
+}
+
+<style>
+    .active-link {
+        background: rgba(231, 84, 128, 0.3) !important;
+        border-left: 4px solid #e75480;
+    }
+
+    a:hover {
+        background: rgba(255,255,255,0.1) !important;
+    }
+</style>

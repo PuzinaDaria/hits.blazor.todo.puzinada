@@ -1,0 +1,208 @@
+﻿@page "/profile"
+@rendermode InteractiveServer
+@inject IAuthService AuthService
+@inject IUserService UserService
+
+<div style="max-width: 1000px; margin: 30px auto;">
+    @if (user != null)
+    {
+        <div style="display: grid; grid-template-columns: 1fr 350px; gap: 30px;">
+            <!-- Основная информация -->
+            <div>
+                <div style="background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); overflow: hidden; margin-bottom: 30px;">
+                    <div style="background: #e75480; color: white; padding: 25px 30px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h2 style="margin: 0; font-size: 28px;">Мой профиль</h2>
+                            <button @onclick="ToggleEditMode"
+                                    style="background: white; color: #e75480; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;">
+                                @(isEditing ? "Отменить" : "Редактировать")
+                            </button>
+                        </div>
+                    </div>
+
+                    <div style="padding: 30px;">
+                        @if (isEditing)
+                        {
+                            <!-- Форма редактирования -->
+                            <form @onsubmit="SaveProfile">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                                    <div>
+                                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Имя</label>
+                                        <input type="text" @bind="user.FirstName" required
+                                               style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;" />
+                                    </div>
+                                    <div>
+                                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Фамилия</label>
+                                        <input type="text" @bind="user.LastName" required
+                                               style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;" />
+                                    </div>
+                                </div>
+
+                                <div style="margin-bottom: 20px;">
+                                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Возраст</label>
+                                    <input type="number" @bind="user.Age" min="18" max="100" required
+                                           style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;" />
+                                </div>
+
+                                <div style="margin-bottom: 20px;">
+                                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">О себе</label>
+                                    <textarea @bind="user.Description" rows="3"
+                                              style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;"></textarea>
+                                </div>
+
+                                <div style="margin-bottom: 20px;">
+                                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Ищу</label>
+                                    <select @bind="user.LookingFor" required
+                                            style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; background: white;">
+                                        <option value="Друга">Друга</option>
+                                        <option value="Девушку">Девушку</option>
+                                        <option value="Парня">Парня</option>
+                                        <option value="Серьезные отношения">Серьезные отношения</option>
+                                        <option value="Просто общение">Просто общение</option>
+                                    </select>
+                                </div>
+
+                                <div style="margin-bottom: 25px;">
+                                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Предпочтительный возраст</label>
+                                    <select @bind="user.PreferredAgeRange" required
+                                            style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; background: white;">
+                                        <option value="18-25">18-25 лет</option>
+                                        <option value="26-35">26-35 лет</option>
+                                        <option value="36-45">36-45 лет</option>
+                                        <option value="46+">46+ лет</option>
+                                        <option value="Любой">Любой</option>
+                                    </select>
+                                </div>
+
+                                <button type="submit"
+                                        style="background: #28a745; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 16px; cursor: pointer;">
+                                    Сохранить изменения
+                                </button>
+                            </form>
+                        }
+                        else
+                        {
+                            <!-- Просмотр профиля -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
+                                <div>
+                                    <div style="color: #666; font-size: 14px; margin-bottom: 5px;">Имя</div>
+                                    <div style="font-size: 18px; font-weight: 600;">@user.FirstName</div>
+                                </div>
+                                <div>
+                                    <div style="color: #666; font-size: 14px; margin-bottom: 5px;">Фамилия</div>
+                                    <div style="font-size: 18px; font-weight: 600;">@user.LastName</div>
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom: 25px;">
+                                <div style="color: #666; font-size: 14px; margin-bottom: 5px;">Возраст</div>
+                                <div style="font-size: 18px; font-weight: 600;">@user.Age лет</div>
+                            </div>
+
+                            <div style="margin-bottom: 25px;">
+                                <div style="color: #666; font-size: 14px; margin-bottom: 5px;">Email</div>
+                                <div style="font-size: 18px; font-weight: 600;">@user.Email</div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(user.Description))
+                            {
+                                <div style="margin-bottom: 25px;">
+                                    <div style="color: #666; font-size: 14px; margin-bottom: 5px;">О себе</div>
+                                    <div style="font-size: 16px; line-height: 1.6;">@user.Description</div>
+                                </div>
+                            }
+
+                            <div style="margin-bottom: 25px;">
+                                <div style="color: #666; font-size: 14px; margin-bottom: 5px;">Ищу</div>
+                                <div style="font-size: 18px; font-weight: 600;">@user.LookingFor</div>
+                            </div>
+
+                            <div style="margin-bottom: 25px;">
+                                <div style="color: #666; font-size: 14px; margin-bottom: 5px;">Предпочтительный возраст</div>
+                                <div style="font-size: 18px; font-weight: 600;">@user.PreferredAgeRange</div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(user.Interests))
+                            {
+                                <div>
+                                    <div style="color: #666; font-size: 14px; margin-bottom: 5px;">Интересы</div>
+                                    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
+                                        @foreach (var interest in user.Interests.Split(", "))
+                                        {
+                                            <span style="background: #17a2b8; color: white; padding: 6px 12px; border-radius: 20px; font-size: 14px;">
+                                                @interest
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Боковая панель -->
+            <div>
+                <!-- Статистика -->
+                <div style="background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); padding: 25px; margin-bottom: 20px;">
+                    <h3 style="margin: 0 0 20px 0; color: #2c3e50;">Статистика</h3>
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <div style="width: 100px; height: 100px; background: #e75480; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 15px auto;">
+                            @GetInitials()
+                        </div>
+                        <div style="font-size: 20px; font-weight: bold; margin-bottom: 5px;">@user.FirstName @user.LastName</div>
+                        <div style="color: #666;">Участник с @user.CreatedAt.ToString("MMMM yyyy")</div>
+                    </div>
+
+                    <div style="border-top: 1px solid #eee; padding-top: 20px;">
+                        <NavLink href="/search" style="display: block; padding: 15px; border-radius: 8px; background: #f8f9fa; color: #333; text-decoration: none; margin-bottom: 10px; transition: all 0.3s;">
+                            <span style="margin-right: 10px;">🔍</span>
+                            Найти людей
+                        </NavLink>
+                        <NavLink href="/messages" style="display: block; padding: 15px; border-radius: 8px; background: #f8f9fa; color: #333; text-decoration: none; transition: all 0.3s;">
+                            <span style="margin-right: 10px;">💬</span>
+                            Мои сообщения
+                        </NavLink>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div style="text-align: center; padding: 50px;">
+            <p>Пожалуйста, войдите в систему</p>
+            <NavLink href="/login" style="color: #e75480; text-decoration: none;">Войти</NavLink>
+        </div>
+    }
+</div>
+
+@code {
+    private User? user;
+    private bool isEditing = false;
+
+    protected override void OnInitialized()
+    {
+        user = AuthService.CurrentUser;
+    }
+
+    private void ToggleEditMode()
+    {
+        isEditing = !isEditing;
+    }
+
+    private async Task SaveProfile()
+    {
+        if (user != null)
+        {
+            await UserService.UpdateUserAsync(user);
+            isEditing = false;
+        }
+    }
+
+    private string GetInitials()
+    {
+        if (user == null) return "?";
+        return $"{user.FirstName[0]}{user.LastName[0]}".ToUpper();
+    }
+}

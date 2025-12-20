@@ -1,0 +1,98 @@
+﻿@using DatingWebsite.Data.Models
+@rendermode InteractiveServer
+
+@if (ShowModal)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Выбор интересов</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="Close"></button>
+                </div>
+                <div class="modal-body">
+                    @if (Interests != null && Interests.Any())
+                    {
+                        <div class="row">
+                            @foreach (var category in Interests.GroupBy(i => i.Category))
+                            {
+                                <div class="col-md-6 mb-4">
+                                    <h6 class="border-bottom pb-2 mb-3">@category.Key</h6>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach (var interest in category)
+                                        {
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox"
+                                                       id="interest-@interest.Id"
+                                                       checked="@SelectedInterests.Contains(interest.Name)"
+                                                       @onchange="@((e) => ToggleInterest(interest.Name, (bool)e.Value))">
+                                                <label class="form-check-label" for="interest-@interest.Id">
+                                                    @interest.Name
+                                                </label>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted text-center">Интересы не найдены</p>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="Close">
+                        <i class="bi bi-x-circle"></i> Отмена
+                    </button>
+                    <button type="button" class="btn btn-primary" @onclick="Save">
+                        <i class="bi bi-check-circle"></i> Сохранить
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool ShowModal { get; set; }
+    [Parameter] public List<Interest> Interests { get; set; } = new();
+    [Parameter] public List<string> SelectedInterests { get; set; } = new();
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<List<string>> OnSave { get; set; }
+
+    private List<string> tempSelectedInterests = new();
+
+    protected override void OnParametersSet()
+    {
+        if (ShowModal)
+        {
+            tempSelectedInterests = new List<string>(SelectedInterests);
+        }
+    }
+
+    private void ToggleInterest(string interestName, bool isChecked)
+    {
+        if (isChecked)
+        {
+            if (!tempSelectedInterests.Contains(interestName))
+                tempSelectedInterests.Add(interestName);
+        }
+        else
+        {
+            tempSelectedInterests.Remove(interestName);
+        }
+    }
+
+    private async Task Save()
+    {
+        await OnSave.InvokeAsync(tempSelectedInterests);
+        await Close();
+    }
+
+    private async Task Close()
+    {
+        await OnClose.InvokeAsync();
+    }
+}
