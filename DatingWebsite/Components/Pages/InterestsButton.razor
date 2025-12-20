@@ -1,0 +1,17 @@
+﻿<button type="button"
+        @onclick="OnClickHandler"
+        style="@Style">
+    @ChildContent
+</button>
+
+@code {
+    [Parameter] public string Style { get; set; } = "";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+
+    private async Task OnClickHandler()
+    {
+        Console.WriteLine("InterestsButton clicked!");
+        await OnClick.InvokeAsync();
+    }
+}
