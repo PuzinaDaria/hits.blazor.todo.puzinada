@@ -1,4 +1,4 @@
-﻿@page "/chat/{ChatId:int}"
+﻿@page "/chat/{ChatId}"
 @inject NavigationManager Navigation
 
 <div style="max-width: 1000px; margin: 30px auto;">
@@ -139,7 +139,7 @@
         const match = path.match(/\/chat\/(\d+)/);
 
         if (match) {
-            currentChatId = parseInt(match[1]);
+            currentChatId = match[1];
             loadChat();
         } else {
             alert('Чат не найден');
@@ -147,22 +147,32 @@
         }
     });
 
-    function loadChat() {
-        const chats = getUserChats();
-        const chat = chats.find(c => c.id === currentChatId);
+        function loadChat() {
+        console.log('Загрузка чата ID:', currentChatId);
+
+        // Получаем ВСЕ чаты
+        const chats = getUserChats();  // ← Эта функция есть в chat.js
+        console.log('Все чаты:', chats);
+
+        // Ищем нужный чат (сравниваем как строки)
+        const chat = chats.find(c => String(c.id) === String(currentChatId));
 
         if (!chat) {
-            alert('Чат не найден');
+            console.error('Чат не найден среди:', chats);
+            alert('Чат не найден!');
             window.location.href = '/messages';
             return;
         }
 
-        // Получаем информацию о пользователе
-        chatUser = getUserById(chat.userId);
-        currentUserId = chat.userId;
+        console.log('Найден чат:', chat);
+
+        // Получаем информацию о пользователе из чата
+        currentUserId = chat.userId;  // ← ID пользователя из чата
+        chatUser = getUserById(currentUserId);  // ← Ищем пользователя
 
         if (chatUser) {
-            document.getElementById('chatUserName').textContent = chatUser.firstName + ' ' + chatUser.lastName;
+            document.getElementById('chatUserName').textContent =
+                chatUser.firstName + ' ' + chatUser.lastName;
         } else {
             document.getElementById('chatUserName').textContent = chat.userName;
         }
@@ -176,7 +186,7 @@
         // Фокусируемся на поле ввода
         document.getElementById('messageInput').focus();
 
-        // Обновляем сообщения каждые 3 секунды (для имитации получения новых)
+        // Обновляем сообщения каждые 3 секунды
         setInterval(loadMessages, 3000);
     }
 
@@ -260,7 +270,6 @@
 </script>
 
 @code {
-    // ⚠️ ДОБАВЬТЕ ЭТОТ БЛОК - он обязателен!
     [Parameter]
-    public int ChatId { get; set; }
+    public string ChatId { get; set; }  // ← string вместо int!
 }

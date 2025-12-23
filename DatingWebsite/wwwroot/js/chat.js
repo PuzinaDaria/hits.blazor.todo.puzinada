@@ -70,23 +70,29 @@ function initializeChats() {
     }
 }
 // Получить все чаты текущего пользователя
+// В chat.js убедись, что эта функция есть:
 function getUserChats() {
-    const chats = JSON.parse(localStorage.getItem(CHATS_KEY) || '[]');
-    return chats.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+    try {
+        const chats = JSON.parse(localStorage.getItem(CHATS_KEY) || '[]');
+        return chats.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+    } catch (error) {
+        console.error('Ошибка получения чатов:', error);
+        return [];
+    }
 }
 
 // Получить или создать чат с пользователем
 function getOrCreateChat(userId, userName) {
     const chats = getUserChats();
 
-    // Ищем существующий чат
-    let chat = chats.find(c => c.userId === userId);
+    // Ищем чат, сравнивая ID как строки
+    let chat = chats.find(c => String(c.userId) === String(userId));
 
     if (!chat) {
         // Создаем новый чат
         chat = {
-            id: Date.now(),
-            userId: userId,
+            id: Date.now().toString(),  // ← ID чата как строка!
+            userId: userId.toString(),  // ← ID пользователя как строка!
             userName: userName,
             lastMessage: "",
             lastMessageTime: new Date().toISOString(),
@@ -99,6 +105,8 @@ function getOrCreateChat(userId, userName) {
 
     return chat;
 }
+
+
 
 // Получить сообщения чата
 function getChatMessages(chatId) {
