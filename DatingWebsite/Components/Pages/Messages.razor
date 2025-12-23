@@ -133,8 +133,8 @@
         }
     }
 
-    function deleteThisChat(chatId, event) {
-        // Останавливаем всплытие события, чтобы не открывался чат
+        function deleteThisChat(chatId, event) {
+        // Останавливаем всплытие события
         if (event) {
             event.stopPropagation();
             event.preventDefault();
@@ -149,17 +149,25 @@
         if (typeof deleteChat === 'function') {
             deleteChat(chatId);
         } else {
-            // Резервный вариант, если chat.js не загружен
+            // Резервный вариант
             try {
+                const getCurrentUserId = () => {
+                    const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                    return user ? user.id : 0;
+                };
+
+                const chatsKey = `datingWebsiteChats_${getCurrentUserId()}`;
+                const messagesKey = `datingWebsiteMessages_${getCurrentUserId()}`;
+
                 // Удаляем чат
-                const chats = JSON.parse(localStorage.getItem('datingWebsiteChats') || '[]');
+                const chats = JSON.parse(localStorage.getItem(chatsKey) || '[]');
                 const filteredChats = chats.filter(chat => String(chat.id) !== String(chatId));
-                localStorage.setItem('datingWebsiteChats', JSON.stringify(filteredChats));
+                localStorage.setItem(chatsKey, JSON.stringify(filteredChats));
 
                 // Удаляем сообщения этого чата
-                const messages = JSON.parse(localStorage.getItem('datingWebsiteMessages') || '[]');
+                const messages = JSON.parse(localStorage.getItem(messagesKey) || '[]');
                 const filteredMessages = messages.filter(msg => String(msg.chatId) !== String(chatId));
-                localStorage.setItem('datingWebsiteMessages', JSON.stringify(filteredMessages));
+                localStorage.setItem(messagesKey, JSON.stringify(filteredMessages));
 
                 alert('Чат удален!');
 
@@ -174,14 +182,22 @@
         }
     }
         // В конец файла Messages.razor добавь:
-    function refreshChatsList() {
+        function refreshChatsList() {
         console.log('Принудительное обновление списка чатов');
 
-        // Получаем актуальные данные
-        const chats = JSON.parse(localStorage.getItem('datingWebsiteChats') || '[]');
-        const messages = JSON.parse(localStorage.getItem('datingWebsiteMessages') || '[]');
+        const getCurrentUserId = () => {
+            const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            return user ? user.id : 0;
+        };
 
-        console.log('Чатов:', chats.length);
+        const chatsKey = `datingWebsiteChats_${getCurrentUserId()}`;
+        const messagesKey = `datingWebsiteMessages_${getCurrentUserId()}`;
+
+        // Получаем актуальные данные
+        const chats = JSON.parse(localStorage.getItem(chatsKey) || '[]');
+        const messages = JSON.parse(localStorage.getItem(messagesKey) || '[]');
+
+        console.log(`Чатов для пользователя ${getCurrentUserId()}:`, chats.length);
         console.log('Сообщений:', messages.length);
 
         // Проверяем каждый чат
@@ -192,7 +208,6 @@
             if (!chat.lastMessage || chat.lastMessage === '') {
                 const chatMessages = messages.filter(msg => String(msg.chatId) === String(chat.id));
                 if (chatMessages.length > 0) {
-                    // Сортируем по времени и берем последнее
                     chatMessages.sort((a, b) => new Date(b.time) - new Date(a.time));
                     const lastMsg = chatMessages[0];
                     chat.lastMessage = lastMsg.text.length > 30 ? lastMsg.text.substring(0, 30) + '...' : lastMsg.text;
@@ -202,7 +217,7 @@
         });
 
         // Сохраняем обновленные чаты
-        localStorage.setItem('datingWebsiteChats', JSON.stringify(chats));
+        localStorage.setItem(chatsKey, JSON.stringify(chats));
 
         // Перезагружаем список
         displayMessages();

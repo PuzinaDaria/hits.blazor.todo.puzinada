@@ -1,31 +1,44 @@
-﻿// chat.js - полный файл
-// Система чатов и сообщений
+﻿// chat.js - обновленная версия с привязкой чатов к пользователю
 
-const CHATS_KEY = 'datingWebsiteChats';
-const MESSAGES_KEY = 'datingWebsiteMessages';
+const getCurrentUserId = () => {
+    const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
+    return user ? user.id : 0;
+};
 
-// Инициализация тестовых чатов
+// Ключи для localStorage теперь включают ID пользователя
+function getChatsKey() {
+    const userId = getCurrentUserId();
+    return `datingWebsiteChats_${userId}`;
+}
+
+function getMessagesKey() {
+    const userId = getCurrentUserId();
+    return `datingWebsiteMessages_${userId}`;
+}
+
+// Инициализация тестовых чатов (для текущего пользователя)
 function initializeChats() {
-    let chats = JSON.parse(localStorage.getItem(CHATS_KEY) || '[]');
-    let messages = JSON.parse(localStorage.getItem(MESSAGES_KEY) || '[]');
+    // Только проверяем, создавать тестовые чаты не будем
+    const chats = JSON.parse(localStorage.getItem(getChatsKey()) || '[]');
+    const messages = JSON.parse(localStorage.getItem(getMessagesKey()) || '[]');
+    console.log(`Инициализация чатов для пользователя ${getCurrentUserId()}: ${chats.length} чатов, ${messages.length} сообщений`);
 }
 
 // Получить все чаты текущего пользователя
 function getUserChats() {
-    const chats = JSON.parse(localStorage.getItem(CHATS_KEY) || '[]');
+    const chats = JSON.parse(localStorage.getItem(getChatsKey()) || '[]');
     return chats.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
 }
 
 // Получить или создать чат с пользователем
-// Получить или создать чат с пользователем
 function getOrCreateChat(userId, userName) {
     const chats = getUserChats();
 
-    // Ищем существующий чат - СРАВНИВАЕМ КАК ЧИСЛА!
+    // Ищем существующий чат
     let chat = chats.find(c => Number(c.userId) === Number(userId));
 
     if (!chat) {
-        console.log('Создаем новый чат для пользователя ID:', userId);
+        console.log(`Создаем новый чат для пользователя ${userId} (текущий: ${getCurrentUserId()})`);
         // Создаем новый чат
         chat = {
             id: Date.now(),
@@ -37,7 +50,7 @@ function getOrCreateChat(userId, userName) {
         };
 
         chats.push(chat);
-        localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
+        localStorage.setItem(getChatsKey(), JSON.stringify(chats));
         console.log('Новый чат создан:', chat);
     } else {
         console.log('Найден существующий чат:', chat);
@@ -46,54 +59,17 @@ function getOrCreateChat(userId, userName) {
     return chat;
 }
 
-// Добавь в конец chat.js
-function cleanupDuplicateChats() {
-    const chats = getUserChats();
-    const uniqueChats = [];
-    const seenUserIds = new Set();
-
-    // Идем с конца, чтобы сохранить последние чаты
-    for (let i = chats.length - 1; i >= 0; i--) {
-        const chat = chats[i];
-        const userId = chat.userId.toString();
-
-        if (!seenUserIds.has(userId)) {
-            seenUserIds.add(userId);
-            uniqueChats.unshift(chat); // Добавляем в начало
-        } else {
-            console.log('Удаляем дубликат чата для пользователя:', userId);
-        }
-    }
-
-    if (chats.length !== uniqueChats.length) {
-        localStorage.setItem(CHATS_KEY, JSON.stringify(uniqueChats));
-        console.log(`Удалено ${chats.length - uniqueChats.length} дубликатов чатов`);
-        alert(`Удалено ${chats.length - uniqueChats.length} дубликатов чатов!`);
-
-        if (window.location.pathname.includes('/messages') && typeof displayMessages === 'function') {
-            displayMessages();
-        }
-    }
-
-    return uniqueChats;
-}
-
-// Для вызова из консоли
-window.cleanupDuplicateChats = cleanupDuplicateChats;
-
 // Получить сообщения чата
 function getChatMessages(chatId) {
-    const allMessages = JSON.parse(localStorage.getItem(MESSAGES_KEY) || '[]');
+    const allMessages = JSON.parse(localStorage.getItem(getMessagesKey()) || '[]');
     return allMessages
         .filter(msg => msg.chatId === chatId)
         .sort((a, b) => new Date(a.time) - new Date(b.time));
 }
 
 // Отправить сообщение
-// Отправить сообщение (в chat.js)
-// Отправить сообщение
 function sendMessage(chatId, text, senderId = 0, receiverId) {
-    const messages = JSON.parse(localStorage.getItem(MESSAGES_KEY) || '[]');
+    const messages = JSON.parse(localStorage.getItem(getMessagesKey()) || '[]');
     const chats = getUserChats();
 
     // Создаем сообщение
@@ -108,9 +84,9 @@ function sendMessage(chatId, text, senderId = 0, receiverId) {
     };
 
     messages.push(message);
-    localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
+    localStorage.setItem(getMessagesKey(), JSON.stringify(messages));
 
-    // Обновляем чат - ВАЖНО: ищем чат по ID
+    // Обновляем чат
     const chatIndex = chats.findIndex(c => String(c.id) === String(chatId));
 
     if (chatIndex !== -1) {
@@ -124,7 +100,7 @@ function sendMessage(chatId, text, senderId = 0, receiverId) {
             chats[chatIndex].unreadCount = (chats[chatIndex].unreadCount || 0) + 1;
         }
 
-        localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
+        localStorage.setItem(getChatsKey(), JSON.stringify(chats));
         console.log('Чат обновлен:', chats[chatIndex]);
     } else {
         console.error('Чат не найден для обновления:', chatId);
@@ -140,7 +116,7 @@ function sendMessage(chatId, text, senderId = 0, receiverId) {
     return message;
 }
 
-// Имитация ответа
+// Имитация ответа (остается без изменений)
 function simulateReply(chatId, senderId) {
     const replies = [
         "Привет! Рада тебя слышать!",
@@ -161,7 +137,7 @@ function simulateReply(chatId, senderId) {
 
 // Пометить сообщения как прочитанные
 function markMessagesAsRead(chatId) {
-    const messages = JSON.parse(localStorage.getItem(MESSAGES_KEY) || '[]');
+    const messages = JSON.parse(localStorage.getItem(getMessagesKey()) || '[]');
     const chats = getUserChats();
 
     // Помечаем сообщения как прочитанные
@@ -171,34 +147,34 @@ function markMessagesAsRead(chatId) {
         }
     });
 
-    localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
+    localStorage.setItem(getMessagesKey(), JSON.stringify(messages));
 
     // Сбрасываем счетчик непрочитанных в чате
     const chatIndex = chats.findIndex(c => c.id === chatId);
     if (chatIndex !== -1) {
         chats[chatIndex].unreadCount = 0;
-        localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
+        localStorage.setItem(getChatsKey(), JSON.stringify(chats));
     }
 }
 
 // Удалить чат
 function deleteChat(chatId) {
     try {
-        console.log('Удаление чата ID:', chatId);
+        console.log('Удаление чата ID:', chatId, 'для пользователя:', getCurrentUserId());
 
         // Получаем все чаты
-        let chats = JSON.parse(localStorage.getItem(CHATS_KEY) || '[]');
+        let chats = JSON.parse(localStorage.getItem(getChatsKey()) || '[]');
 
-        // Фильтруем чаты, оставляя все кроме удаляемого
+        // Фильтруем чаты
         chats = chats.filter(chat => String(chat.id) !== String(chatId));
 
         // Сохраняем обновленный список
-        localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
+        localStorage.setItem(getChatsKey(), JSON.stringify(chats));
 
         // Удаляем сообщения этого чата
-        let messages = JSON.parse(localStorage.getItem(MESSAGES_KEY) || '[]');
+        let messages = JSON.parse(localStorage.getItem(getMessagesKey()) || '[]');
         messages = messages.filter(msg => String(msg.chatId) !== String(chatId));
-        localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
+        localStorage.setItem(getMessagesKey(), JSON.stringify(messages));
 
         console.log('Чат удален');
 
@@ -220,6 +196,42 @@ function deleteChat(chatId) {
         return false;
     }
 }
+
+// Очистка дубликатов (обновленная)
+function cleanupDuplicateChats() {
+    const chats = getUserChats();
+    const uniqueChats = [];
+    const seenUserIds = new Set();
+
+    // Идем с конца, чтобы сохранить последние чаты
+    for (let i = chats.length - 1; i >= 0; i--) {
+        const chat = chats[i];
+        const userId = chat.userId.toString();
+
+        if (!seenUserIds.has(userId)) {
+            seenUserIds.add(userId);
+            uniqueChats.unshift(chat);
+        } else {
+            console.log('Удаляем дубликат чата для пользователя:', userId);
+        }
+    }
+
+    if (chats.length !== uniqueChats.length) {
+        localStorage.setItem(getChatsKey(), JSON.stringify(uniqueChats));
+        console.log(`Удалено ${chats.length - uniqueChats.length} дубликатов чатов`);
+        alert(`Удалено ${chats.length - uniqueChats.length} дубликатов чатов!`);
+
+        if (window.location.pathname.includes('/messages') && typeof displayMessages === 'function') {
+            displayMessages();
+        }
+    }
+
+    return uniqueChats;
+}
+
+// Для вызова из консоли
+window.cleanupDuplicateChats = cleanupDuplicateChats;
+window.getCurrentUserId = getCurrentUserId; // Добавляем для отладки
 
 // Инициализируем при загрузке
 document.addEventListener('DOMContentLoaded', initializeChats);

@@ -48,6 +48,111 @@
     if (typeof getUserChats === 'undefined') {
         console.log('chat.js не загружен, создаю временные функции');
 
+            if (typeof getUserChats === 'undefined') {
+        console.log('chat.js не загружен, создаю временные функции');
+
+        const getCurrentUserId = () => {
+            const user = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            return user ? user.id : 0;
+        };
+
+        function getChatsKey() {
+            const userId = getCurrentUserId();
+            return `datingWebsiteChats_${userId}`;
+        }
+
+        function getMessagesKey() {
+            const userId = getCurrentUserId();
+            return `datingWebsiteMessages_${userId}`;
+        }
+
+        function getUserChats() {
+            const chats = JSON.parse(localStorage.getItem(getChatsKey()) || '[]');
+            return chats.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+        }
+
+        function getChatMessages(chatId) {
+            const allMessages = JSON.parse(localStorage.getItem(getMessagesKey()) || '[]');
+            return allMessages
+                .filter(msg => String(msg.chatId) === String(chatId))
+                .sort((a, b) => new Date(a.time) - new Date(b.time));
+        }
+
+        function getOrCreateChat(userId, userName) {
+            const chats = JSON.parse(localStorage.getItem(getChatsKey()) || '[]');
+            let chat = chats.find(c => String(c.userId) === String(userId));
+
+            if (!chat) {
+                chat = {
+                    id: Date.now().toString(),
+                    userId: userId.toString(),
+                    userName: userName,
+                    lastMessage: "",
+                    lastMessageTime: new Date().toISOString(),
+                    unreadCount: 0
+                };
+                chats.push(chat);
+                localStorage.setItem(getChatsKey(), JSON.stringify(chats));
+            }
+            return chat;
+        }
+
+        function getUserById(userId) {
+            const users = JSON.parse(localStorage.getItem('datingWebsiteUsers') || '[]');
+            return users.find(u => String(u.id) === String(userId));
+        }
+
+        function sendMessage(chatId, text, senderId = 0, receiverId) {
+            const messages = JSON.parse(localStorage.getItem(getMessagesKey()) || '[]');
+            const chats = JSON.parse(localStorage.getItem(getChatsKey()) || '[]');
+
+            const message = {
+                id: Date.now(),
+                chatId: chatId,
+                senderId: senderId,
+                receiverId: receiverId,
+                text: text,
+                time: new Date().toISOString(),
+                isRead: false
+            };
+
+            messages.push(message);
+            localStorage.setItem(getMessagesKey(), JSON.stringify(messages));
+
+            const chatIndex = chats.findIndex(c => String(c.id) === String(chatId));
+            if (chatIndex !== -1) {
+                chats[chatIndex].lastMessage = text.length > 30 ? text.substring(0, 30) + '...' : text;
+                chats[chatIndex].lastMessageTime = new Date().toISOString();
+                localStorage.setItem(getChatsKey(), JSON.stringify(chats));
+            }
+
+            return message;
+        }
+
+        function markMessagesAsRead(chatId) {
+            const messages = JSON.parse(localStorage.getItem(getMessagesKey()) || '[]');
+            messages.forEach(msg => {
+                if (String(msg.chatId) === String(chatId) && msg.senderId !== 0 && !msg.isRead) {
+                    msg.isRead = true;
+                }
+            });
+            localStorage.setItem(getMessagesKey(), JSON.stringify(messages));
+        }
+
+        function deleteChat(chatId) {
+            // Простая реализация для резервного варианта
+            const chats = JSON.parse(localStorage.getItem(getChatsKey()) || '[]');
+            const filteredChats = chats.filter(chat => String(chat.id) !== String(chatId));
+            localStorage.setItem(getChatsKey(), JSON.stringify(filteredChats));
+
+            const messages = JSON.parse(localStorage.getItem(getMessagesKey()) || '[]');
+            const filteredMessages = messages.filter(msg => String(msg.chatId) !== String(chatId));
+            localStorage.setItem(getMessagesKey(), JSON.stringify(filteredMessages));
+
+            return true;
+        }
+    }
+
         function getUserChats() {
             const chats = JSON.parse(localStorage.getItem('datingWebsiteChats') || '[]');
             return chats.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
