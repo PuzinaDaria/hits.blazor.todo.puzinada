@@ -46,7 +46,7 @@
         const userId = match[1];
         console.log('ID пользователя из URL:', userId);
 
-        // Получаем пользователя (без рекурсии!)
+        // Получаем пользователя
         const user = findUserById(userId);
 
         if (!user) {
@@ -58,11 +58,9 @@
         renderUserProfile(user);
     }
 
-    // Изменено название функции чтобы избежать конфликта
     function findUserById(userId) {
         try {
-            // Сначала проверяем, есть ли функция в users.js (не наше window!)
-            // users.js добавляет свои функции в глобальную область видимости
+            // Сначала проверяем, есть ли функция в users.js
             if (typeof getAllUsers === 'function') {
                 console.log('Использую функцию из users.js');
                 const users = getAllUsers();
@@ -94,6 +92,7 @@
                     description: user.description || '',
                     lookingFor: user.lookingFor || '',
                     preferredAgeRange: user.preferredAgeRange || '',
+                    avatar: user.avatar || '', // Добавляем аватарку
                     interests: user.interests || []
                 };
             }
@@ -121,13 +120,23 @@
         const lastName = user.lastName || '';
         const initials = (firstName.charAt(0) + lastName.charAt(0)).toUpperCase();
 
+        // Проверяем, есть ли аватарка
+        const hasAvatar = user.avatar && user.avatar !== '';
+        const avatarHtml = hasAvatar
+            ? `<img src="${user.avatar}" alt="${user.firstName} ${user.lastName}"
+                 style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`
+            : `<div style="font-size: 40px;">${initials}</div>`;
+
         // Создаем HTML безопасным способом
         let html = '';
 
         // Основная информация
         html += '<div style="text-align: center; margin-bottom: 40px;">';
-        html += '<div style="width: 120px; height: 120px; background: #e75480; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; margin: 0 auto 20px auto;">';
-        html += initials;
+        html += '<div style="width: 120px; height: 120px; background: ' + (hasAvatar ? 'transparent' : '#e75480') + '; ';
+        html += 'color: white; border-radius: 50%; display: flex; align-items: center; ';
+        html += 'justify-content: center; font-size: 40px; margin: 0 auto 20px auto; ';
+        html += 'border: ' + (hasAvatar ? '3px solid #e75480' : 'none') + '; overflow: hidden;">';
+        html += avatarHtml;
         html += '</div>';
         html += '<h3 style="margin: 0 0 10px 0; color: #2c3e50;">' + user.firstName + ' ' + user.lastName + '</h3>';
         html += '<div style="color: #666; margin-bottom: 5px;">Возраст: ' + user.age + ' лет</div>';
@@ -154,15 +163,15 @@
             html += '</div>';
         }
 
-        // ПРЕДПОЧТИТЕЛЬНЫЙ ВОЗРАСТ - ДОБАВЬТЕ ЭТОТ БЛОК
-    if (user.preferredAgeRange) {
-        html += '<div style="margin-bottom: 30px;">';
-        html += '<h4 style="color: #2c3e50; margin-bottom: 15px;">Предпочтительный возраст</h4>';
-        html += '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; color: #666;">';
-        html += user.preferredAgeRange;
-        html += '</div>';
-        html += '</div>';
-    }
+        // Предпочтительный возраст
+        if (user.preferredAgeRange) {
+            html += '<div style="margin-bottom: 30px;">';
+            html += '<h4 style="color: #2c3e50; margin-bottom: 15px;">Предпочтительный возраст</h4>';
+            html += '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; color: #666;">';
+            html += user.preferredAgeRange;
+            html += '</div>';
+            html += '</div>';
+        }
 
         // Интересы
         if (user.interests && user.interests.length > 0) {
@@ -216,7 +225,7 @@
             return;
         }
 
-        // Используем функцию из Search.razor (она уже глобальная)
+        // Используем функцию из Search.razor
         if (typeof window.sendMessageToUser === 'function') {
             window.sendMessageToUser(userId);
         } else {

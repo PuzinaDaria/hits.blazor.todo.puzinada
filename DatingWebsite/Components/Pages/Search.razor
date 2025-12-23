@@ -152,11 +152,18 @@
                 ? (firstName[0] + lastName[0]).toUpperCase()
                 : '??';
 
+            // Проверяем наличие аватарки
+            const hasAvatar = user.avatar && user.avatar !== '';
+            const avatarHtml = hasAvatar
+                ? `<img src="${user.avatar}" alt="${firstName} ${lastName}"
+                     style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;" />`
+                : `<div style="font-size: 20px;">${initials}</div>`;
+
             const interests = (user.interests || []).slice(0, 3).map(interest =>
                 `<span style="background: #17a2b8; color: white; padding: 4px 10px; border-radius: 15px; font-size: 12px;">${interest}</span>`
             ).join('');
 
-            // БЕЗОПАСНЫЙ HTML - используем кавычки для ID!
+            // БЕЗОПАСНЫЙ HTML
             html += `
                 <div style="background: #f8f9fa; border-radius: 12px; padding: 25px; border: 1px solid #eee; transition: transform 0.3s; cursor: pointer;"
                      onclick="openUserProfile('${user.id}')"
@@ -164,8 +171,11 @@
                      onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
 
                     <div style="display: flex; align-items: center; margin-bottom: 15px;">
-                        <div style="width: 60px; height: 60px; background: #e75480; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; margin-right: 15px;">
-                            ${initials}
+                        <div style="width: 60px; height: 60px; background: ${hasAvatar ? 'transparent' : '#e75480'};
+                                    color: white; border-radius: 50%; display: flex; align-items: center;
+                                    justify-content: center; font-size: 20px; margin-right: 15px;
+                                    border: ${hasAvatar ? '2px solid #e75480' : 'none'}; overflow: hidden;">
+                            ${avatarHtml}
                         </div>
                         <div>
                             <div style="font-size: 18px; font-weight: bold; color: #2c3e50;">
@@ -173,6 +183,8 @@
                             </div>
                             <div style="color: #666; font-size: 14px;">${user.age || '?'} лет</div>
                             <div style="color: #666; font-size: 12px;">Ищет: ${user.lookingFor || 'Не указано'}</div>
+                            <!-- Предпочитаемый возраст -->
+                            <div style="color: #666; font-size: 11px; margin-top: 2px;">Предпочитает возраст: ${user.preferredAgeRange || 'Любой'}</div>
                         </div>
                     </div>
 
@@ -211,8 +223,11 @@
                 lastName: "Иванова",
                 age: 24,
                 email: "anna@example.com",
+                password: "123456",
                 description: "Люблю кино, путешествия и спорт. Ищу серьёзные отношения.",
                 lookingFor: "Серьезные отношения",
+                preferredAgeRange: "26-35 лет",
+                avatar: "https://i.pravatar.cc/150?img=1", // Добавляем аватарку
                 interests: ["Кино", "Путешествия", "Спорт", "Кулинария"]
             },
             {
@@ -221,9 +236,51 @@
                 lastName: "Петров",
                 age: 28,
                 email: "maxim@example.com",
+                password: "123456",
                 description: "Программист, увлекаюсь технологиями и книгами. Ищу друзей.",
                 lookingFor: "Друзей",
+                preferredAgeRange: "18-25 лет",
+                avatar: "https://i.pravatar.cc/150?img=2", // Добавляем аватарку
                 interests: ["Программирование", "Книги", "Игры", "Музыка"]
+            },
+            {
+                id: 3,
+                firstName: "Екатерина",
+                lastName: "Смирнова",
+                age: 26,
+                email: "ekaterina@example.com",
+                password: "123456",
+                description: "Дизайнер, люблю искусство и фотографию. Ищу интересного собеседника.",
+                lookingFor: "Общение",
+                preferredAgeRange: "25-35 лет",
+                avatar: "https://i.pravatar.cc/150?img=3", // Добавляем аватарку
+                interests: ["Искусство", "Фотография", "Мода", "Танцы"]
+            },
+            {
+                id: 4,
+                firstName: "Дмитрий",
+                lastName: "Соколов",
+                age: 30,
+                email: "dmitry@example.com",
+                password: "123456",
+                description: "Предприниматель, занимаюсь спортом. Ищу девушку для отношений.",
+                lookingFor: "Отношения",
+                preferredAgeRange: "22-28 лет",
+                avatar: "https://i.pravatar.cc/150?img=4", // Добавляем аватарку
+                interests: ["Спорт", "Автомобили", "Бизнес", "Путешествия"]
+            },
+            {
+                id: 5,
+                firstName: "Ольга",
+                lastName: "Кузнецова",
+                age: 22,
+                email: "olga@example.com",
+                password: "123456",
+                description: "Студентка, учусь на психолога. Люблю животных и природу.",
+                lookingFor: "Друга",
+                preferredAgeRange: "20-30 лет",
+                avatar: "https://i.pravatar.cc/150?img=5", // Добавляем аватарку
+                interests: ["Психология", "Животные", "Природа", "Йога"]
             }
         ];
 
@@ -234,14 +291,23 @@
     }
 
     // Функция для открытия профиля пользователя
-            function openUserProfile(userId) {
-        console.log('Открываю профиль пользователя ID:', userId);
-        // Просто переходим по URL
-        window.location.href = '/user/' + userId;
+    function openUserProfile(userId) {
+        console.log('Открываю профиль пользователя ID:', userId, 'тип:', typeof userId);
+
+        // Получаем пользователя
+        const user = getUserById(userId);
+
+        if (!user) {
+            alert('Пользователь не найден');
+            return;
+        }
+
+        // Переходим на страницу профиля
+        window.location.href = `/user/${userId}`;
     }
 
-    // Функция отправки сообщения - ТОЛЬКО ОДНА ФУНКЦИЯ!
-        function sendMessageToUser(userId) {
+    // Функция отправки сообщения
+    function sendMessageToUser(userId) {
         if (event) event.stopPropagation();
 
         console.log('Отправка сообщения пользователю ID:', userId);

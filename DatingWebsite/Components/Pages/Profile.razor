@@ -156,6 +156,66 @@
     </div>
 </div>
 
+<!-- Модальное окно загрузки аватарки -->
+<div id="avatarModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 3000;">
+    <div style="background: white; width: 90%; max-width: 500px; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;">
+        <!-- Заголовок модалки -->
+        <div style="background: #17a2b8; color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; font-size: 22px;">Загрузка аватарки</h3>
+            <button type="button" id="closeAvatarModalBtn"
+                    style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0;">
+                ×
+            </button>
+        </div>
+
+        <!-- Содержимое модалки -->
+        <div style="padding: 30px;">
+            <div style="text-align: center; margin-bottom: 20px;">
+                <div id="avatarPreview"
+                     style="width: 150px; height: 150px; background: #f8f9fa;
+                            border-radius: 50%; margin: 0 auto 20px auto;
+                            display: flex; align-items: center; justify-content: center;
+                            border: 3px dashed #ddd; overflow: hidden;">
+                    <div style="color: #666; font-size: 14px;">
+                        Предпросмотр
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">
+                    Выберите изображение
+                </label>
+                <input type="file" id="avatarInput" accept="image/*"
+                       style="width: 100%; padding: 10px; border: 2px solid #ddd;
+                              border-radius: 8px; font-size: 16px;" />
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">
+                    Или используйте URL изображения
+                </label>
+                <input type="text" id="avatarUrl" placeholder="https://example.com/avatar.jpg"
+                       style="width: 100%; padding: 10px; border: 2px solid #ddd;
+                              border-radius: 8px; font-size: 16px;" />
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" onclick="removeAvatar()"
+                        style="flex: 1; background: #dc3545; color: white; border: none;
+                               padding: 12px; border-radius: 8px; cursor: pointer;">
+                    Удалить аватарку
+                </button>
+                <button type="button" onclick="saveAvatar()"
+                        style="flex: 1; background: #28a745; color: white; border: none;
+                               padding: 12px; border-radius: 8px; cursor: pointer;">
+                    Сохранить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     // Глобальные переменные для редактирования
     let editSelectedInterests = [];
@@ -182,6 +242,9 @@
 
         // Инициализируем модальные окна редактирования
         initEditModals();
+
+        // Инициализируем модальное окно аватарки
+        initAvatarModal();
     });
 
     function loadUserProfile() {
@@ -204,12 +267,34 @@
             const lastName = currentUser.lastName || '';
             const initials = (firstName[0] + (lastName ? lastName[0] : '')).toUpperCase();
 
+            // Проверяем, есть ли аватарка у пользователя
+            const hasAvatar = currentUser.avatar && currentUser.avatar !== '';
+            const avatarHtml = hasAvatar
+                ? `<img src="${currentUser.avatar}" alt="${firstName} ${lastName}"
+                     style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`
+                : `<div style="font-size: 40px;">${initials}</div>`;
+
             // Создаем HTML профиля
             const profileHTML = `
                 <div style="text-align: center; margin-bottom: 40px;">
-                    <div style="width: 120px; height: 120px; background: #e75480; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; margin: 0 auto 20px auto;">
-                        ${initials}
+                    <div style="width: 120px; height: 120px; background: ${hasAvatar ? 'transparent' : '#e75480'};
+                                color: white; border-radius: 50%; display: flex; align-items: center;
+                                justify-content: center; font-size: 40px; margin: 0 auto 20px auto;
+                                border: ${hasAvatar ? '3px solid #e75480' : 'none'}; overflow: hidden;">
+                        ${avatarHtml}
                     </div>
+
+                    <!-- Кнопка смены аватарки -->
+                    <div style="margin-top: 15px;">
+                        <button onclick="changeAvatar()"
+                                style="background: #17a2b8; color: white; border: none; padding: 8px 16px;
+                                       border-radius: 8px; cursor: pointer; font-size: 14px;
+                                       display: inline-flex; align-items: center; gap: 5px;">
+                            <span>🖼️</span>
+                            <span>${hasAvatar ? 'Сменить аватарку' : 'Добавить аватарку'}</span>
+                        </button>
+                    </div>
+
                     <h3 style="margin: 0 0 10px 0; color: #2c3e50;">${firstName} ${lastName}</h3>
                     <div style="color: #666; margin-bottom: 5px;">${currentUser.email || 'Email не указан'}</div>
                     ${currentUser.age ? `<div style="color: #666; margin-bottom: 15px;">${currentUser.age} лет</div>` : ''}
@@ -226,7 +311,7 @@
 
                 ${currentUser.lookingFor ? `
                 <div style="margin-bottom: 30px;">
-                    <h4 style="color: #2c3e50; margin-bottom: 15px;">Ищу</h4>
+                    <h4 style="color: #2c3e50; margin-bottom: 15px;">Ищет</h4>
                     <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; color: #666;">
                         ${currentUser.lookingFor}
                     </div>
@@ -363,6 +448,26 @@
         }
     }
 
+    // Инициализация модального окна аватарки
+    function initAvatarModal() {
+        const avatarModal = document.getElementById('avatarModal');
+        const closeAvatarBtn = document.getElementById('closeAvatarModalBtn');
+
+        if (closeAvatarBtn) {
+            closeAvatarBtn.addEventListener('click', function() {
+                avatarModal.style.display = 'none';
+            });
+        }
+
+        if (avatarModal) {
+            avatarModal.addEventListener('click', function(event) {
+                if (event.target === avatarModal) {
+                    avatarModal.style.display = 'none';
+                }
+            });
+        }
+    }
+
     // Функции для модального окна редактирования профиля
     function editProfile() {
         console.log('Редактирование профиля');
@@ -432,7 +537,8 @@
                 const userPassword = users[userIndex].password;
                 const userWithPassword = {
                     ...updatedUser,
-                    password: userPassword
+                    password: userPassword,
+                    avatar: currentUser.avatar || '' // Сохраняем аватарку
                 };
 
                 users[userIndex] = userWithPassword;
@@ -596,6 +702,123 @@
             interestsCount.style.display = 'none';
             container.style.display = 'none';
         }
+    }
+
+    // ФУНКЦИИ ДЛЯ РАБОТЫ С АВАТАРКОЙ
+
+    function changeAvatar() {
+        console.log('Смена аватарки');
+
+        // Заполняем поля текущими данными
+        const avatarUrlInput = document.getElementById('avatarUrl');
+        const avatarPreview = document.getElementById('avatarPreview');
+
+        if (currentUser && currentUser.avatar) {
+            avatarUrlInput.value = currentUser.avatar;
+
+            // Показываем текущую аватарку в превью
+            avatarPreview.innerHTML = `
+                <img src="${currentUser.avatar}" alt="Аватарка"
+                     style="width: 100%; height: 100%; object-fit: cover;" />
+            `;
+        } else {
+            avatarUrlInput.value = '';
+            avatarPreview.innerHTML = '<div style="color: #666; font-size: 14px;">Предпросмотр</div>';
+        }
+
+        // Настройка загрузки файла
+        const fileInput = document.getElementById('avatarInput');
+        fileInput.onchange = function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                // Проверяем размер файла (макс 2 МБ)
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('Файл слишком большой. Максимальный размер: 2 МБ');
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    avatarPreview.innerHTML = `
+                        <img src="${e.target.result}" alt="Загруженное изображение"
+                             style="width: 100%; height: 100%; object-fit: cover;" />
+                    `;
+                    avatarUrlInput.value = e.target.result; // Data URL
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        // Очищаем поле файла
+        fileInput.value = '';
+
+        // Показываем модальное окно
+        document.getElementById('avatarModal').style.display = 'flex';
+    }
+
+    function saveAvatar() {
+        const avatarUrl = document.getElementById('avatarUrl').value.trim();
+
+        if (!avatarUrl) {
+            alert('Введите URL изображения или загрузите файл');
+            return;
+        }
+
+        // Проверяем, что это валидный URL или Data URL
+        if (!avatarUrl.startsWith('http') && !avatarUrl.startsWith('data:image')) {
+            alert('Пожалуйста, введите корректный URL изображения (начинается с http://, https:// или data:image)');
+            return;
+        }
+
+        // Обновляем данные пользователя
+        currentUser.avatar = avatarUrl;
+
+        // Сохраняем в localStorage
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+        // Обновляем в общем списке пользователей
+        const users = JSON.parse(localStorage.getItem('datingWebsiteUsers') || '[]');
+        const userIndex = users.findIndex(u => u.email === currentUser.email);
+        if (userIndex !== -1) {
+            users[userIndex].avatar = avatarUrl;
+            localStorage.setItem('datingWebsiteUsers', JSON.stringify(users));
+        }
+
+        // Закрываем модальное окно
+        document.getElementById('avatarModal').style.display = 'none';
+
+        // Обновляем профиль
+        loadUserProfile();
+
+        alert('Аватарка успешно обновлена!');
+    }
+
+    function removeAvatar() {
+        if (!confirm('Удалить аватарку?')) {
+            return;
+        }
+
+        // Удаляем аватарку у пользователя
+        currentUser.avatar = '';
+
+        // Сохраняем изменения
+        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+        // Обновляем в общем списке
+        const users = JSON.parse(localStorage.getItem('datingWebsiteUsers') || '[]');
+        const userIndex = users.findIndex(u => u.email === currentUser.email);
+        if (userIndex !== -1) {
+            users[userIndex].avatar = '';
+            localStorage.setItem('datingWebsiteUsers', JSON.stringify(users));
+        }
+
+        // Закрываем модальное окно
+        document.getElementById('avatarModal').style.display = 'none';
+
+        // Обновляем профиль
+        loadUserProfile();
+
+        alert('Аватарка удалена');
     }
 
     function deleteProfile() {

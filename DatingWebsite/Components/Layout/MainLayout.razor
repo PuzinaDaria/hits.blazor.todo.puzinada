@@ -14,7 +14,7 @@
         <div id="topBar" style="background: white; padding: 15px 30px; border-bottom: 1px solid #eee; display: flex; justify-content: flex-end;">
             <!-- Содержимое будет обновлено через JavaScript -->
             <div id="topBarContent">
-                <span style="color: #6c757d;">Загрузка...</span>
+                @* <span style="color: #6c757d;">Загрузка...</span> *@
             </div>
         </div>
 
@@ -46,18 +46,18 @@
                 console.error('Ошибка при получении данных пользователя:', error);
             }
             
-            topBarContent.innerHTML = `
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <div style="display: flex; align-items: center; gap: 8px; color: #28a745;">
-                        <span style="font-size: 18px;">✅</span>
-                        <span>Вы вошли как <strong>${userName}</strong></span>
-                    </div>
-                    <button onclick="logoutUser()" 
-                            style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">
-                        Выйти
-                    </button>
-                </div>
-            `;
+            // topBarContent.innerHTML = `
+            //     <div style="display: flex; align-items: center; gap: 15px;">
+            //         <div style="display: flex; align-items: center; gap: 8px; color: #28a745;">
+            //             <span style="font-size: 18px;">✅</span>
+            //             <span>Вы вошли как <strong>${userName}</strong></span>
+            //         </div>
+            //         <button onclick="logoutUser()" 
+            //                 style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;">
+            //             Выйти
+            //         </button>
+            //     </div>
+            // `;
         } else {
             topBarContent.innerHTML = `
                 <div style="display: flex; align-items: center; gap: 15px;">
