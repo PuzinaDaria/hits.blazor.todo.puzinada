@@ -28,7 +28,7 @@
         displayMessages();
     });
 
-    function displayMessages() {
+        function displayMessages() {
         const container = document.getElementById('messagesContainer');
         const chats = getUserChats();
 
@@ -53,10 +53,36 @@
 
         chats.forEach(chat => {
             const user = getUserById(chat.userId);
-            const initials = user ? (user.firstName[0] + user.lastName[0]).toUpperCase() : '??';
+
+            // БЕЗОПАСНОЕ получение инициалов
+            let initials = '??';
+            if (user) {
+                const firstName = user.firstName || '';
+                const lastName = user.lastName || '';
+                if (firstName && lastName) {
+                    initials = (firstName[0] + lastName[0]).toUpperCase();
+                } else if (firstName) {
+                    initials = firstName[0].toUpperCase();
+                } else if (chat.userName) {
+                    // Пробуем получить из имени в чате
+                    const nameParts = chat.userName.split(' ');
+                    if (nameParts.length >= 2) {
+                        initials = (nameParts[0][0] + nameParts[1][0]).toUpperCase();
+                    } else if (nameParts[0]) {
+                        initials = nameParts[0][0].toUpperCase();
+                    }
+                }
+            }
+
             const time = new Date(chat.lastMessageTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
             const date = new Date(chat.lastMessageTime).toLocaleDateString();
-            const lastMessage = chat.lastMessage || "Нет сообщений";
+
+            // Получаем последнее сообщение (не используем запасной вариант "Нет сообщений")
+            let lastMessage = chat.lastMessage || "";
+            if (!lastMessage && user) {
+                // Если нет lastMessage, но есть пользователь, показываем приветствие
+                lastMessage = `Чат с ${user.firstName}`;
+            }
 
             html += `
                 <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; border: 1px solid #eee; transition: all 0.3s; position: relative;"
@@ -65,7 +91,7 @@
 
                     <!-- Кнопка удаления (красный крестик в правом верхнем углу) -->
                     <button onclick="deleteThisChat('${chat.id}', event)"
-                            style="position: absolute; top: 10px; right: 10px; background: #dc3545; color: white; border: none; width: 25px; height: 25px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; z-index: 10;"
+                            style="position: absolute; top: 10px; right: 10px; background: #dc3545; color: white; border: none; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; z-index: 10;"
                             title="Удалить чат"
                             onmouseover="this.style.transform='scale(1.2)';"
                             onmouseout="this.style.transform='scale(1)';">
@@ -86,12 +112,9 @@
                                 ${lastMessage.length > 40 ? lastMessage.substring(0, 40) + '...' : lastMessage}
                             </div>
                         </div>
-                        <div style="text-align: right;">
+                        <div style="text-align: right; text-align: center;">
                             <div style="font-size: 12px; color: #888;">${time}</div>
                             <div style="font-size: 11px; color: #888;">${date}</div>
-                            ${chat.unreadCount > 0 ?
-                                `<div style="background: #e75480; color: white; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; margin-top: 5px;">${chat.unreadCount}</div>`
-                                : ''}
                         </div>
                     </div>
                 </div>
@@ -153,6 +176,60 @@
             }
         }
     }
+        // В конец файла Messages.razor добавь:
+    function refreshChatsList() {
+        console.log('Принудительное обновление списка чатов');
+
+        // Получаем актуальные данные
+        const chats = JSON.parse(localStorage.getItem('datingWebsiteChats') || '[]');
+        const messages = JSON.parse(localStorage.getItem('datingWebsiteMessages') || '[]');
+
+        console.log('Чатов:', chats.length);
+        console.log('Сообщений:', messages.length);
+
+        // Проверяем каждый чат
+        chats.forEach((chat, index) => {
+            console.log(`Чат ${index + 1}:`, chat.userName, 'последнее сообщение:', chat.lastMessage);
+
+            // Если у чата нет lastMessage, пытаемся найти последнее сообщение
+            if (!chat.lastMessage || chat.lastMessage === '') {
+                const chatMessages = messages.filter(msg => String(msg.chatId) === String(chat.id));
+                if (chatMessages.length > 0) {
+                    // Сортируем по времени и берем последнее
+                    chatMessages.sort((a, b) => new Date(b.time) - new Date(a.time));
+                    const lastMsg = chatMessages[0];
+                    chat.lastMessage = lastMsg.text.length > 30 ? lastMsg.text.substring(0, 30) + '...' : lastMsg.text;
+                    console.log('Обновлено последнее сообщение для чата:', chat.userName, '->', chat.lastMessage);
+                }
+            }
+        });
+
+        // Сохраняем обновленные чаты
+        localStorage.setItem('datingWebsiteChats', JSON.stringify(chats));
+
+        // Перезагружаем список
+        displayMessages();
+    }
+
+    // Добавляем кнопку обновления в Messages.razor (опционально)
+    function addRefreshButton() {
+        const container = document.getElementById('messagesContainer');
+        if (container) {
+            const refreshBtn = document.createElement('button');
+            refreshBtn.textContent = '🔄 Обновить список чатов';
+            refreshBtn.style.cssText = 'background: #17a2b8; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-bottom: 20px;';
+            refreshBtn.onclick = refreshChatsList;
+            container.parentNode.insertBefore(refreshBtn, container);
+        }
+    }
+
+    // Вызываем при загрузке
+    document.addEventListener('DOMContentLoaded', function() {
+        // ... существующий код ...
+
+        // Добавляем кнопку обновления
+        setTimeout(addRefreshButton, 1000);
+    });
 </script>
 
 <style>

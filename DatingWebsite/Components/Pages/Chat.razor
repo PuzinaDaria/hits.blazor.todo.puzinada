@@ -260,7 +260,7 @@
         // setInterval(loadMessages, 3000);
     }
 
-    function sendChatMessage() {
+        function sendChatMessage() {
         const input = document.getElementById('messageInput');
         const text = input.value.trim();
 
@@ -287,7 +287,36 @@
 
         // Немедленно обновляем сообщения
         loadMessages();
+
+        // ОБНОВЛЯЕМ СПИСОК ЧАТОВ на странице сообщений
+        updateChatListOnMessagesPage();
     }
+
+    // Функция для обновления списка чатов на странице /messages
+    function updateChatListOnMessagesPage() {
+        // Если мы находимся на странице /messages, обновляем список
+        if (window.location.pathname.includes('/messages') && typeof displayMessages === 'function') {
+            displayMessages();
+        }
+
+        // Также обновляем, если открыто несколько вкладок
+        try {
+            // Отправляем событие в localStorage для обновления других вкладок
+            localStorage.setItem('chatUpdated', Date.now().toString());
+        } catch (e) {
+            console.log('Не удалось отправить событие обновления:', e);
+        }
+    }
+
+    // Слушаем события обновления чатов
+    window.addEventListener('storage', function(event) {
+        if (event.key === 'chatUpdated' && window.location.pathname.includes('/messages')) {
+            console.log('Получено событие обновления чатов');
+            if (typeof displayMessages === 'function') {
+                displayMessages();
+            }
+        }
+    });
 
     function goBack() {
         window.location.href = '/messages';

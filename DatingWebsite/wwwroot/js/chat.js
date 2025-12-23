@@ -91,53 +91,53 @@ function getChatMessages(chatId) {
 
 // Отправить сообщение
 // Отправить сообщение (в chat.js)
+// Отправить сообщение
 function sendMessage(chatId, text, senderId = 0, receiverId) {
-    try {
-        const messages = JSON.parse(localStorage.getItem(MESSAGES_KEY) || '[]');
-        const chats = getUserChats();
+    const messages = JSON.parse(localStorage.getItem(MESSAGES_KEY) || '[]');
+    const chats = getUserChats();
 
-        // Создаем сообщение
-        const message = {
-            id: Date.now(),
-            chatId: chatId,
-            senderId: senderId,
-            receiverId: receiverId,
-            text: text,
-            time: new Date().toISOString(),
-            isRead: false
-        };
+    // Создаем сообщение
+    const message = {
+        id: Date.now(),
+        chatId: chatId,
+        senderId: senderId,
+        receiverId: receiverId,
+        text: text,
+        time: new Date().toISOString(),
+        isRead: false
+    };
 
-        messages.push(message);
-        localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
+    messages.push(message);
+    localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
 
-        // Обновляем чат
-        const chatIndex = chats.findIndex(c => c.id === chatId);
-        if (chatIndex !== -1) {
-            chats[chatIndex].lastMessage = text.length > 30 ? text.substring(0, 30) + '...' : text;
-            chats[chatIndex].lastMessageTime = new Date().toISOString();
+    // Обновляем чат - ВАЖНО: ищем чат по ID
+    const chatIndex = chats.findIndex(c => String(c.id) === String(chatId));
 
-            // Если отправил другой пользователь, увеличиваем счетчик непрочитанных
-            if (senderId !== 0) {
-                chats[chatIndex].unreadCount = (chats[chatIndex].unreadCount || 0) + 1;
-            }
+    if (chatIndex !== -1) {
+        // Обрезаем текст для preview
+        const previewText = text.length > 30 ? text.substring(0, 30) + '...' : text;
+        chats[chatIndex].lastMessage = previewText;
+        chats[chatIndex].lastMessageTime = new Date().toISOString();
 
-            localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
+        // Если отправил другой пользователь, увеличиваем счетчик непрочитанных
+        if (senderId !== 0) {
+            chats[chatIndex].unreadCount = (chats[chatIndex].unreadCount || 0) + 1;
         }
 
-        // Имитируем ответ через 2-5 секунд
-        if (senderId === 0) {
-            setTimeout(() => {
-                simulateReply(chatId, receiverId);
-            }, 2000 + Math.random() * 3000);
-        }
-
-        console.log('Сообщение сохранено:', message);
-        return message;
-
-    } catch (error) {
-        console.error('Ошибка при отправке сообщения:', error);
-        return null;
+        localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
+        console.log('Чат обновлен:', chats[chatIndex]);
+    } else {
+        console.error('Чат не найден для обновления:', chatId);
     }
+
+    // Имитируем ответ через 2-5 секунд
+    if (senderId === 0) {
+        setTimeout(() => {
+            simulateReply(chatId, receiverId);
+        }, 2000 + Math.random() * 3000);
+    }
+
+    return message;
 }
 
 // Имитация ответа
