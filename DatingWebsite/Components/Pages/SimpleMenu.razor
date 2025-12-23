@@ -1,0 +1,102 @@
+﻿@code {
+
+}
+<!-- Вместо NavMenu.razor - просто статический HTML с JavaScript -->
+<div style="padding: 20px;">
+    <div style="margin-bottom: 30px;">
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: bold; color: white;">
+            <span style="color: #e75480;">❤</span>
+            <a href="/" style="color: white; text-decoration: none;">DatingWebsite</a>
+        </div>
+    </div>
+
+    <nav id="mainMenu" style="display: flex; flex-direction: column; gap: 10px;">
+        <!-- Меню будет заполняться JavaScript -->
+        <a href="/" style="color: white; text-decoration: none; padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
+            <span>🏠</span><span>Главная</span>
+        </a>
+        <a href="/login" style="color: white; text-decoration: none; padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
+            <span>🔑</span><span>Вход</span>
+        </a>
+        <a href="/register" style="color: white; text-decoration: none; padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
+            <span>📝</span><span>Регистрация</span>
+        </a>
+    </nav>
+</div>
+
+<script>
+    // Проверяем при загрузке
+    document.addEventListener('DOMContentLoaded', updateMenu);
+
+    // И при каждом клике (на всякий случай)
+    document.addEventListener('click', updateMenu);
+
+    function updateMenu() {
+        const menu = document.getElementById('mainMenu');
+        const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+
+        if (isLoggedIn) {
+            // Получаем данные пользователя
+            let userName = 'Пользователь';
+            let userEmail = '';
+
+            try {
+                const userJson = localStorage.getItem('currentUser');
+                if (userJson) {
+                    const user = JSON.parse(userJson);
+                    userName = (user.firstName || '') + ' ' + (user.lastName || '');
+                    userEmail = user.email || '';
+                    if (userName.trim() === '') userName = 'Пользователь';
+                }
+            } catch (error) {
+                console.error('Ошибка при получении данных пользователя:', error);
+            }
+
+            menu.innerHTML = `
+                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <div style="font-weight: bold;">${userName}</div>
+                    <div style="font-size: 14px; opacity: 0.8;">${userEmail}</div>
+                </div>
+                <a href="/" style="color: white; text-decoration: none; padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
+                    <span>🏠</span><span>Главная</span>
+                </a>
+                <a href="/search" style="color: white; text-decoration: none; padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
+                    <span>🔍</span><span>Поиск</span>
+                </a>
+                <a href="/messages" style="color: white; text-decoration: none; padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
+                    <span>💬</span><span>Сообщения</span>
+                </a>
+                <a href="/profile" style="color: white; text-decoration: none; padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
+                    <span>👤</span><span>Профиль</span>
+                </a>
+                <button onclick="logout()" style="color: white; background: transparent; border: 1px solid white; padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px; cursor: pointer; margin-top: 20px;">
+                    <span>🚪</span><span>Выйти</span>
+                </button>
+            `;
+        } else {
+            menu.innerHTML = `
+                <a href="/" style="color: white; text-decoration: none; padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
+                    <span>🏠</span><span>Главная</span>
+                </a>
+                <a href="/login" style="color: white; text-decoration: none; padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
+                    <span>🔑</span><span>Вход</span>
+                </a>
+                <a href="/register" style="color: white; text-decoration: none; padding: 12px 15px; border-radius: 8px; display: flex; align-items: center; gap: 10px;">
+                    <span>📝</span><span>Регистрация</span>
+                </a>
+            `;
+        }
+    }
+
+    function logout() {
+        localStorage.removeItem('currentUser');
+        localStorage.removeItem('isLoggedIn');
+        window.location.href = '/';
+    }
+</script>
+
+<style>
+    a:hover, button:hover {
+        background: rgba(255,255,255,0.1) !important;
+    }
+</style>

@@ -1,70 +1,69 @@
-﻿using DatingWebsite.Data;
-using DatingWebsite.Data.Models;
-using System.Security.Cryptography;
-using System.Text;
+﻿using DatingWebsite.Data.Models;
+using Microsoft.JSInterop;
 
 namespace DatingWebsite.Services
 {
-    public interface IAuthService
+    public class AuthService
     {
-        Task<User?> RegisterAsync(User user);
-        Task<User?> LoginAsync(string email, string password);
-        void Logout();
-        User? CurrentUser { get; }
-        bool IsAuthenticated { get; }
-    }
-
-    public class AuthService : IAuthService
-    {
-        private readonly ApplicationDbContext _context;
+        private readonly IJSRuntime _jsRuntime;
         private User? _currentUser;
 
         public User? CurrentUser => _currentUser;
         public bool IsAuthenticated => _currentUser != null;
 
-        public AuthService(ApplicationDbContext context)
+        public AuthService(IJSRuntime jsRuntime)
         {
-            _context = context;
+            _jsRuntime = jsRuntime;
         }
 
-        private string HashPassword(string password)
+        public async Task LoginAsync(string email, string password)
         {
-            using var sha256 = SHA256.Create();
-            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-            return Convert.ToBase64String(bytes);
-        }
-
-        public async Task<User?> RegisterAsync(User user)
-        {
-            if (_context.Users.Any(u => u.Email == user.Email))
-                return null;
-
-            user.Password = HashPassword(user.Password);
-            user.CreatedAt = DateTime.Now;
-
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            _currentUser = user;
-            return user;
-        }
-
-        public async Task<User?> LoginAsync(string email, string password)
-        {
-            var hashedPassword = HashPassword(password);
-            var user = _context.Users.FirstOrDefault(u => u.Email == email && u.Password == hashedPassword);
-
-            if (user != null)
+            // Простая заглушка
+            if (email == "test@example.com" && password == "123456")
             {
-                _currentUser = user;
-            }
+                _currentUser = new User
+                {
+                    Id = 1,
+                    Email = email,
+                    FirstName = "Тест",
+                    LastName = "Пользователь",
+                    Age = 25
+                };
 
-            return user;
+                // Сохраняем в localStorage
+                await _jsRuntime.InvokeVoidAsync("localStorage.setItem", "isLoggedIn", "true");
+            }
         }
 
-        public void Logout()
+        public async Task LogoutAsync()
         {
             _currentUser = null;
+            await _jsRuntime.InvokeVoidAsync("localStorage.removeItem", "isLoggedIn");
+        }
+
+        public async Task CheckAuthAsync()
+        {
+            try
+            {
+                // Проверяем localStorage
+                var isLoggedIn = await _jsRuntime.InvokeAsync<string>("localStorage.getItem", "isLoggedIn");
+
+                if (isLoggedIn == "true")
+                {
+                    _currentUser = new User
+                    {
+                        Id = 1,
+                        Email = "test@example.com",
+                        FirstName = "Тест",
+                        LastName = "Пользователь",
+                        Age = 25
+                    };
+                }
+            }
+            catch
+            {
+                // Игнорируем ошибки
+            }
         }
     }
 }

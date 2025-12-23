@@ -1,55 +1,46 @@
 ﻿@using DatingWebsite.Data.Models
-@rendermode InteractiveServer
 
 @if (ShowModal)
 {
-    <div class="modal-backdrop show"></div>
-    <div class="modal show d-block" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title">Выбор интересов</h5>
-                    <button type="button" class="btn-close btn-close-white" @onclick="Close"></button>
-                </div>
-                <div class="modal-body">
-                    @if (Interests != null && Interests.Any())
+    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+        <div style="background: white; width: 90%; max-width: 800px; max-height: 80vh; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;">
+            <!-- Заголовок модалки -->
+            <div style="background: #e75480; color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin: 0; font-size: 22px;">Выбор интересов</h3>
+                <button type="button" @onclick="Close"
+                        style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0;">
+                    ×
+                </button>
+            </div>
+
+            <!-- Содержимое модалки -->
+            <div style="flex: 1; overflow-y: auto; padding: 20px 30px;">
+                <!-- Список интересов -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
+                    @foreach (var interest in AvailableInterests)
                     {
-                        <div class="row">
-                            @foreach (var category in Interests.GroupBy(i => i.Category))
-                            {
-                                <div class="col-md-6 mb-4">
-                                    <h6 class="border-bottom pb-2 mb-3">@category.Key</h6>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        @foreach (var interest in category)
-                                        {
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox"
-                                                       id="interest-@interest.Id"
-                                                       checked="@SelectedInterests.Contains(interest.Name)"
-                                                       @onchange="@((e) => ToggleInterest(interest.Name, (bool)e.Value))">
-                                                <label class="form-check-label" for="interest-@interest.Id">
-                                                    @interest.Name
-                                                </label>
-                                            </div>
-                                        }
-                                    </div>
-                                </div>
-                            }
+                        <div @onclick="() => ToggleInterest(interest)"
+                             style="display: flex; align-items: center; padding: 12px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer; @(TempSelectedInterests.Contains(interest) ? "border-color: #e75480; background-color: #fff5f8;" : "")">
+                            <input type="checkbox"
+                                   checked="@TempSelectedInterests.Contains(interest)"
+                                   @onchange="@((e) => { })"
+                                   style="margin-right: 12px; width: 18px; height: 18px; cursor: pointer;" />
+                            <label style="flex: 1; cursor: pointer;">@interest</label>
                         </div>
                     }
-                    else
-                    {
-                        <p class="text-muted text-center">Интересы не найдены</p>
-                    }
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" @onclick="Close">
-                        <i class="bi bi-x-circle"></i> Отмена
-                    </button>
-                    <button type="button" class="btn btn-primary" @onclick="Save">
-                        <i class="bi bi-check-circle"></i> Сохранить
-                    </button>
-                </div>
+            </div>
+
+            <!-- Футер модалки -->
+            <div style="padding: 20px 30px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 12px;">
+                <button type="button" @onclick="Close"
+                        style="background: #6c757d; color: white; border: none; padding: 10px 25px; border-radius: 6px; cursor: pointer;">
+                    Отмена
+                </button>
+                <button type="button" @onclick="Save"
+                        style="background: #e75480; color: white; border: none; padding: 10px 25px; border-radius: 6px; cursor: pointer;">
+                    Сохранить (@TempSelectedInterests.Count)
+                </button>
             </div>
         </div>
     </div>
@@ -62,33 +53,39 @@
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback<List<string>> OnSave { get; set; }
 
-    private List<string> tempSelectedInterests = new();
+    private List<string> TempSelectedInterests { get; set; } = new();
+    private List<string> AvailableInterests { get; set; } = new()
+    {
+        "Кино", "Музыка", "Книги", "Спорт", "Путешествия",
+        "Фотография", "Кулинария", "Программирование", "Игры", "Танцы",
+        "Животные", "Наука", "Искусство", "Мода", "Автомобили",
+        "Йога", "Садоводство", "Шахматы", "История", "Психология"
+    };
 
     protected override void OnParametersSet()
     {
         if (ShowModal)
         {
-            tempSelectedInterests = new List<string>(SelectedInterests);
+            TempSelectedInterests = new List<string>(SelectedInterests);
         }
     }
 
-    private void ToggleInterest(string interestName, bool isChecked)
+    private void ToggleInterest(string interest)
     {
-        if (isChecked)
+        if (TempSelectedInterests.Contains(interest))
         {
-            if (!tempSelectedInterests.Contains(interestName))
-                tempSelectedInterests.Add(interestName);
+            TempSelectedInterests.Remove(interest);
         }
         else
         {
-            tempSelectedInterests.Remove(interestName);
+            TempSelectedInterests.Add(interest);
         }
+        StateHasChanged();
     }
 
     private async Task Save()
     {
-        await OnSave.InvokeAsync(tempSelectedInterests);
-        await Close();
+        await OnSave.InvokeAsync(TempSelectedInterests);
     }
 
     private async Task Close()

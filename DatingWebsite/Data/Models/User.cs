@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace DatingWebsite.Data.Models
 {
@@ -13,12 +12,7 @@ namespace DatingWebsite.Data.Models
         public string Email { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Пароль обязателен")]
-        [MinLength(6, ErrorMessage = "Минимум 6 символов")]
-        public string Password { get; set; } = string.Empty;
-
-        [NotMapped]
-        [Compare("Password", ErrorMessage = "Пароли не совпадают")]
-        public string ConfirmPassword { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty; // Убрали MinLength
 
         [Required(ErrorMessage = "Имя обязательно")]
         public string FirstName { get; set; } = string.Empty;
@@ -30,7 +24,7 @@ namespace DatingWebsite.Data.Models
         [Range(18, 100, ErrorMessage = "Возраст 18-100")]
         public int Age { get; set; }
 
-        public string Description { get; set; } = string.Empty;
+        public string? Description { get; set; }
 
         [Required(ErrorMessage = "Укажите, кого ищете")]
         public string LookingFor { get; set; } = string.Empty;
@@ -39,6 +33,7 @@ namespace DatingWebsite.Data.Models
         public string PreferredAgeRange { get; set; } = string.Empty;
 
         public string Interests { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime CreatedAt { get; set; }
+        public DateTime? LastLogin { get; set; }
     }
 }

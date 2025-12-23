@@ -1,32 +1,29 @@
-﻿@inherits LayoutComponentBase
-@inject IAuthService AuthService
-@inject NavigationManager Navigation
+﻿@using DatingWebsite.Components.Pages
+@inherits LayoutComponentBase
 
 <div style="display: flex; min-height: 100vh;">
     <!-- Сайдбар -->
-    <div style="width: 250px; background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%); color: white;">
-        <NavMenu />
+    <div style="width: 250px; background: #2c3e50; color: white;">
+        <!-- Используем SimpleMenu -->
+        <SimpleMenu />
     </div>
 
     <!-- Основной контент -->
     <div style="flex: 1; display: flex; flex-direction: column;">
-        <!-- Верхняя панель -->
-        <div style="background: white; padding: 15px 30px; border-bottom: 1px solid #eee; display: flex; justify-content: flex-end; align-items: center;">
-            @if (AuthService.IsAuthenticated)
-            {
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <span>Привет, @AuthService.CurrentUser?.FirstName!</span>
-                    <button @onclick="Logout" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer;">
-                        Выйти
-                    </button>
-                </div>
-            }
-            else
-            {
-                <a href="/login" style="background: #e75480; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none;">
+        <!-- Верхняя панель (простая) -->
+        <div style="background: white; padding: 15px 30px; border-bottom: 1px solid #eee; display: flex; justify-content: flex-end;">
+            <!-- Кнопки авторизации -->
+            <div>
+                <span id="authStatus" style="margin-right: 15px;">
+                    <!-- Заполнится JavaScript -->
+                </span>
+                <a href="/login" id="loginBtn" style="background: #e75480; color: white; padding: 8px 16px; border-radius: 6px; text-decoration: none;">
                     Войти
                 </a>
-            }
+                <button onclick="logout()" id="logoutBtn" style="background: #dc3545; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; display: none;">
+                    Выйти
+                </button>
+            </div>
         </div>
 
         <!-- Контент страницы -->
@@ -36,10 +33,29 @@
     </div>
 </div>
 
-@code {
-    private void Logout()
-    {
-        AuthService.Logout();
-        Navigation.NavigateTo("/", true);
+<script>
+    // Обновляем верхнюю панель
+    document.addEventListener('DOMContentLoaded', updateTopBar);
+    
+    function updateTopBar() {
+        const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+        const authStatus = document.getElementById('authStatus');
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        
+        if (isLoggedIn) {
+            authStatus.innerHTML = '<span style="color: green;">✅ Вы вошли</span>';
+            loginBtn.style.display = 'none';
+            logoutBtn.style.display = 'inline-block';
+        } else {
+            authStatus.innerHTML = '<span style="color: red;">⚠️ Не авторизован</span>';
+            loginBtn.style.display = 'inline-block';
+            logoutBtn.style.display = 'none';
+        }
     }
-}
+    
+    function logout() {
+        localStorage.removeItem('isLoggedIn');
+        window.location.href = '/';
+    }
+</script>

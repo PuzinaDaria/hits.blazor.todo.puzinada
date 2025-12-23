@@ -1,5 +1,245 @@
-﻿<h3>UserProfile</h3>
+﻿@page "/user/{UserId:int}"
+@inject NavigationManager Navigation
+
+<div style="max-width: 800px; margin: 30px auto;">
+    <!-- Кнопка назад -->
+    <div style="margin-bottom: 20px;">
+        <button onclick="goBack()"
+                style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+            ← Назад к поиску
+        </button>
+    </div>
+
+    <!-- Профиль пользователя -->
+    <div style="background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); overflow: hidden;">
+        <!-- Заголовок профиля -->
+        <div style="background: #e75480; color: white; padding: 25px 30px;">
+            <h2 style="margin: 0; font-size: 28px;" id="profileName">Профиль пользователя</h2>
+        </div>
+
+        <!-- Содержимое профиля -->
+        <div id="profileContent" style="padding: 30px;">
+            <div style="text-align: center; margin-bottom: 40px;">
+                <div id="avatar" style="width: 120px; height: 120px; background: #e75480; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; margin: 0 auto 20px auto;">
+                    ??
+                </div>
+                <h3 id="userFullName" style="margin: 0 0 10px 0; color: #2c3e50;">Загрузка...</h3>
+                <div id="userAge" style="color: #666; margin-bottom: 5px;">Возраст: ...</div>
+                <div id="userEmail" style="color: #666;">Email: ...</div>
+            </div>
+
+            <!-- О себе -->
+            <div id="aboutSection" style="margin-bottom: 30px; display: none;">
+                <h4 style="color: #2c3e50; margin-bottom: 15px;">О себе</h4>
+                <div id="userDescription" style="background: #f8f9fa; padding: 20px; border-radius: 8px; color: #666;">
+                    ...
+                </div>
+            </div>
+
+            <!-- Что ищет -->
+            <div id="lookingForSection" style="margin-bottom: 30px; display: none;">
+                <h4 style="color: #2c3e50; margin-bottom: 15px;">Ищет</h4>
+                <div id="userLookingFor" style="background: #f8f9fa; padding: 20px; border-radius: 8px; color: #666;">
+                    ...
+                </div>
+            </div>
+
+            <!-- Интересы -->
+            <div id="interestsSection" style="margin-bottom: 30px; display: none;">
+                <h4 style="color: #2c3e50; margin-bottom: 15px;">Интересы</h4>
+                <div id="userInterests" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <!-- Интересы будут добавлены через JS -->
+                </div>
+            </div>
+
+            <!-- Кнопки действий -->
+            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 40px;">
+                <button onclick="sendMessageToUser()" id="messageButton"
+                        style="background: #e75480; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 16px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    💬 Написать сообщение
+                </button>
+
+                <button onclick="addToFavorites()" id="favoriteButton"
+                        style="background: #ffc107; color: #333; border: none; padding: 12px 30px; border-radius: 8px; font-size: 16px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    ⭐ Добавить в избранное
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Подключаем скрипты -->
+<script src="js/users.js"></script>
+<script src="js/chat.js"></script>
+
+<script>
+
+    // ========== ФУНКЦИИ ДЛЯ РАБОТЫ С ПОЛЬЗОВАТЕЛЯМИ ==========
+    const USERS_KEY = 'datingWebsiteUsers';
+
+    // Получить всех пользователей
+    function getAllUsers() {
+        try {
+            const usersJson = localStorage.getItem(USERS_KEY);
+            return usersJson ? JSON.parse(usersJson) : [];
+        } catch (error) {
+            console.error('Ошибка при получении пользователей:', error);
+            return [];
+        }
+    }
+
+    // Получить пользователя по ID
+    function getUserById(id) {
+        const users = getAllUsers();
+        return users.find(user => user.id === id);
+    }
+
+
+    let currentUserId = 0;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Проверяем авторизацию
+        if (localStorage.getItem('isLoggedIn') !== 'true') {
+            alert('Для просмотра профилей необходимо войти в систему');
+            window.location.href = '/login';
+            return;
+        }
+
+        // Получаем ID пользователя из URL
+        const path = window.location.pathname;
+        const match = path.match(/\/user\/(\d+)/);
+
+        if (match) {
+            currentUserId = parseInt(match[1]);
+            loadUserProfile();
+        } else {
+            alert('Пользователь не найден');
+            window.location.href = '/search';
+        }
+    });
+
+    function loadUserProfile() {
+        console.log('Загружаю профиль пользователя ID:', currentUserId);
+
+        if (typeof getUserById === 'undefined') {
+            showError('Функция getUserById не найдена');
+            return;
+        }
+
+        const user = getUserById(currentUserId);
+
+        if (!user) {
+            showError('Пользователь не найден');
+            return;
+        }
+
+        console.log('Найден пользователь:', user);
+
+        // Заполняем информацию
+        const initials = (user.firstName[0] + user.lastName[0]).toUpperCase();
+        document.getElementById('avatar').textContent = initials;
+        document.getElementById('profileName').textContent = 'Профиль пользователя';
+        document.getElementById('userFullName').textContent = `${user.firstName} ${user.lastName}`;
+        document.getElementById('userAge').textContent = `Возраст: ${user.age} лет`;
+        document.getElementById('userEmail').textContent = `Email: ${user.email}`;
+
+        // О себе
+        if (user.description && user.description.trim()) {
+            document.getElementById('aboutSection').style.display = 'block';
+            document.getElementById('userDescription').textContent = user.description;
+        }
+
+        // Что ищет
+        if (user.lookingFor && user.lookingFor.trim()) {
+            document.getElementById('lookingForSection').style.display = 'block';
+            document.getElementById('userLookingFor').textContent = user.lookingFor;
+        }
+
+        // Интересы
+        if (user.interests && user.interests.length > 0) {
+            document.getElementById('interestsSection').style.display = 'block';
+            const interestsContainer = document.getElementById('userInterests');
+            interestsContainer.innerHTML = '';
+
+            user.interests.forEach(interest => {
+                const interestSpan = document.createElement('span');
+                interestSpan.textContent = interest;
+                interestSpan.style.cssText = 'background: #17a2b8; color: white; padding: 8px 15px; border-radius: 20px; font-size: 14px;';
+                interestsContainer.appendChild(interestSpan);
+            });
+        }
+
+        // Скрываем кнопки, если это текущий пользователь
+        const currentUserEmail = JSON.parse(localStorage.getItem('currentUser') || '{}').email;
+        if (user.email === currentUserEmail) {
+            document.getElementById('messageButton').style.display = 'none';
+            document.getElementById('favoriteButton').style.display = 'none';
+            document.getElementById('profileName').textContent = 'Мой профиль';
+        }
+    }
+
+    function sendMessageToUser() {
+        if (typeof getOrCreateChat === 'undefined') {
+            alert('Функция чата недоступна');
+            return;
+        }
+
+        const user = getUserById(currentUserId);
+        if (user) {
+            const chat = getOrCreateChat(currentUserId, `${user.firstName} ${user.lastName}`);
+            window.location.href = `/chat/${chat.id}`;
+        }
+    }
+
+    function addToFavorites() {
+        // Получаем текущие избранные
+        const favorites = JSON.parse(localStorage.getItem('userFavorites') || '[]');
+
+        // Проверяем, нет ли уже в избранном
+        if (favorites.some(fav => fav.userId === currentUserId)) {
+            alert('Этот пользователь уже в избранном');
+            return;
+        }
+
+        const user = getUserById(currentUserId);
+        if (user) {
+            favorites.push({
+                userId: currentUserId,
+                userName: `${user.firstName} ${user.lastName}`,
+                addedAt: new Date().toISOString()
+            });
+
+            localStorage.setItem('userFavorites', JSON.stringify(favorites));
+            alert(`Пользователь ${user.firstName} ${user.lastName} добавлен в избранное!`);
+
+            // Меняем кнопку
+            document.getElementById('favoriteButton').innerHTML = '⭐ В избранном';
+            document.getElementById('favoriteButton').style.background = '#28a745';
+            document.getElementById('favoriteButton').style.color = 'white';
+            document.getElementById('favoriteButton').onclick = null;
+        }
+    }
+
+    function goBack() {
+        window.history.back();
+    }
+
+    function showError(message) {
+        document.getElementById('profileContent').innerHTML = `
+            <div style="text-align: center; padding: 50px; color: #dc3545;">
+                <div style="font-size: 48px; margin-bottom: 20px;">❌</div>
+                <h3>Ошибка</h3>
+                <p>${message}</p>
+                <button onclick="goBack()"
+                        style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-top: 15px;">
+                    ← Вернуться назад
+                </button>
+            </div>
+        `;
+    }
+</script>
 
 @code {
-
+    [Parameter]
+    public int UserId { get; set; }
 }

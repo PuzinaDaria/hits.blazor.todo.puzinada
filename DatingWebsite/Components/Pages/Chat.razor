@@ -1,0 +1,266 @@
+﻿@page "/chat/{ChatId:int}"
+@inject NavigationManager Navigation
+
+<div style="max-width: 1000px; margin: 30px auto;">
+    <!-- Кнопка назад -->
+    <div style="margin-bottom: 20px;">
+        <button onclick="goBack()"
+                style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+            ← Назад к сообщениям
+        </button>
+    </div>
+
+    <!-- Окно чата -->
+    <div style="background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); overflow: hidden;">
+        <!-- Заголовок чата -->
+        <div id="chatHeader" style="background: #e75480; color: white; padding: 20px 30px;">
+            <h2 style="margin: 0; font-size: 22px;" id="chatUserName">Загрузка...</h2>
+        </div>
+
+        <!-- Сообщения -->
+        <div style="height: 500px; overflow-y: auto; padding: 20px; background: #f8f9fa;" id="messagesContainer">
+            <div style="text-align: center; padding: 50px; color: #666;">
+                Загрузка сообщений...
+            </div>
+        </div>
+
+        <!-- Поле ввода -->
+        <div style="padding: 20px 30px; border-top: 1px solid #eee; background: white;">
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="messageInput" placeholder="Введите сообщение..."
+                       style="flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;"
+                       onkeypress="if(event.key === 'Enter') sendChatMessage()" />
+                <button onclick="sendChatMessage()" id="sendButton"
+                        style="background: #e75480; color: white; border: none; padding: 0 25px; border-radius: 8px; cursor: pointer; font-size: 16px;">
+                    Отправить
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- Подключаем скрипты -->
+<script src="js/users.js"></script>
+<script src="js/chat.js"></script>
+
+<script>
+        if (typeof getUserChats === 'undefined') {
+        console.log('chat.js не загружен, создаю временные функции');
+
+        function getUserChats() {
+            const chats = JSON.parse(localStorage.getItem('datingWebsiteChats') || '[]');
+            return chats.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+        }
+
+        function getChatMessages(chatId) {
+            const allMessages = JSON.parse(localStorage.getItem('datingWebsiteMessages') || '[]');
+            return allMessages
+                .filter(msg => msg.chatId === chatId)
+                .sort((a, b) => new Date(a.time) - new Date(b.time));
+        }
+
+        function getOrCreateChat(userId, userName) {
+            const chats = JSON.parse(localStorage.getItem('datingWebsiteChats') || '[]');
+            let chat = chats.find(c => c.userId === userId);
+
+            if (!chat) {
+                chat = {
+                    id: Date.now(),
+                    userId: userId,
+                    userName: userName,
+                    lastMessage: "",
+                    lastMessageTime: new Date().toISOString(),
+                    unreadCount: 0
+                };
+                chats.push(chat);
+                localStorage.setItem('datingWebsiteChats', JSON.stringify(chats));
+            }
+            return chat;
+        }
+
+        function getUserById(userId) {
+            const users = JSON.parse(localStorage.getItem('datingWebsiteUsers') || '[]');
+            return users.find(u => u.id === userId);
+        }
+
+        function sendMessage(chatId, text, senderId = 0, receiverId) {
+            const messages = JSON.parse(localStorage.getItem('datingWebsiteMessages') || '[]');
+            const chats = JSON.parse(localStorage.getItem('datingWebsiteChats') || '[]');
+
+            const message = {
+                id: Date.now(),
+                chatId: chatId,
+                senderId: senderId,
+                receiverId: receiverId,
+                text: text,
+                time: new Date().toISOString(),
+                isRead: false
+            };
+
+            messages.push(message);
+            localStorage.setItem('datingWebsiteMessages', JSON.stringify(messages));
+
+            const chatIndex = chats.findIndex(c => c.id === chatId);
+            if (chatIndex !== -1) {
+                chats[chatIndex].lastMessage = text.length > 30 ? text.substring(0, 30) + '...' : text;
+                chats[chatIndex].lastMessageTime = new Date().toISOString();
+                localStorage.setItem('datingWebsiteChats', JSON.stringify(chats));
+            }
+
+            return message;
+        }
+
+        function markMessagesAsRead(chatId) {
+            const messages = JSON.parse(localStorage.getItem('datingWebsiteMessages') || '[]');
+            messages.forEach(msg => {
+                if (msg.chatId === chatId && msg.senderId !== 0 && !msg.isRead) {
+                    msg.isRead = true;
+                }
+            });
+            localStorage.setItem('datingWebsiteMessages', JSON.stringify(messages));
+        }
+    }
+
+    let currentChatId = 0;
+    let currentUserId = 0;
+    let chatUser = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Проверяем авторизацию
+        if (localStorage.getItem('isLoggedIn') !== 'true') {
+            alert('Для использования чата необходимо войти в систему');
+            window.location.href = '/login';
+            return;
+        }
+
+        // Получаем ID чата из URL
+        const path = window.location.pathname;
+        const match = path.match(/\/chat\/(\d+)/);
+
+        if (match) {
+            currentChatId = parseInt(match[1]);
+            loadChat();
+        } else {
+            alert('Чат не найден');
+            window.location.href = '/messages';
+        }
+    });
+
+    function loadChat() {
+        const chats = getUserChats();
+        const chat = chats.find(c => c.id === currentChatId);
+
+        if (!chat) {
+            alert('Чат не найден');
+            window.location.href = '/messages';
+            return;
+        }
+
+        // Получаем информацию о пользователе
+        chatUser = getUserById(chat.userId);
+        currentUserId = chat.userId;
+
+        if (chatUser) {
+            document.getElementById('chatUserName').textContent = chatUser.firstName + ' ' + chatUser.lastName;
+        } else {
+            document.getElementById('chatUserName').textContent = chat.userName;
+        }
+
+        // Загружаем сообщения
+        loadMessages();
+
+        // Помечаем сообщения как прочитанные
+        markMessagesAsRead(currentChatId);
+
+        // Фокусируемся на поле ввода
+        document.getElementById('messageInput').focus();
+
+        // Обновляем сообщения каждые 3 секунды (для имитации получения новых)
+        setInterval(loadMessages, 3000);
+    }
+
+        function loadMessages() {
+        const messages = getChatMessages(currentChatId);
+        const container = document.getElementById('messagesContainer');
+
+        if (!messages || messages.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 80px 20px; color: #666;">
+                    <div style="font-size: 64px; margin-bottom: 20px;">💭</div>
+                    <h3 style="color: #2c3e50; margin-bottom: 10px;">Чат пуст</h3>
+                    <p style="font-size: 16px; margin-bottom: 20px; max-width: 500px; margin-left: auto; margin-right: auto;">
+                        Напишите первое сообщение, чтобы начать диалог с этим пользователем.
+                    </p>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin-top: 30px; max-width: 400px; margin-left: auto; margin-right: auto;">
+                        <p style="margin-bottom: 15px; font-weight: bold;">💡 Советы для первого сообщения:</p>
+                        <ul style="text-align: left; padding-left: 20px;">
+                            <li>Поздоровайтесь и представьтесь</li>
+                            <li>Спросите об общих интересах</li>
+                            <li>Будьте вежливы и дружелюбны</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+
+        messages.forEach(message => {
+            const isMyMessage = message.senderId === 0;
+            const time = new Date(message.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+            html += `
+                <div style="margin-bottom: 15px; display: flex; ${isMyMessage ? 'justify-content: flex-end;' : 'justify-content: flex-start;'}">
+                    <div style="max-width: 70%;">
+                        <div style="background: ${isMyMessage ? '#e75480' : '#e9ecef'};
+                                    color: ${isMyMessage ? 'white' : '#333'};
+                                    padding: 12px 16px;
+                                    border-radius: ${isMyMessage ? '18px 18px 4px 18px' : '18px 18px 18px 4px'};
+                                    box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                            <div>${message.text}</div>
+                            <div style="font-size: 11px; opacity: 0.7; margin-top: 5px; text-align: right;">
+                                ${time} ${message.isRead ? '✓✓' : '✓'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+
+        // Прокручиваем вниз
+        container.scrollTop = container.scrollHeight;
+    }
+
+    function sendChatMessage() {
+        const input = document.getElementById('messageInput');
+        const text = input.value.trim();
+
+        if (!text) {
+            return;
+        }
+
+        // Отправляем сообщение
+        sendMessage(currentChatId, text, 0, currentUserId);
+
+        // Очищаем поле ввода
+        input.value = '';
+        input.focus();
+
+        // Обновляем сообщения
+        setTimeout(loadMessages, 100);
+    }
+
+    function goBack() {
+        window.location.href = '/messages';
+    }
+</script>
+
+@code {
+    // ⚠️ ДОБАВЬТЕ ЭТОТ БЛОК - он обязателен!
+    [Parameter]
+    public int ChatId { get; set; }
+}

@@ -1,6 +1,4 @@
 ﻿@page "/"
-@rendermode InteractiveServer
-@inject IAuthService AuthService
 
 <div style="background: linear-gradient(135deg, #e75480 0%, #ff9fcf 100%); color: white; padding: 80px 0;">
     <div style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">
@@ -10,32 +8,18 @@
                 <p style="font-size: 20px; margin-bottom: 30px; opacity: 0.9;">
                     Платформа для поиска новых знакомств, друзей и серьезных отношений
                 </p>
-                @if (AuthService.IsAuthenticated)
-                {
-                    <div style="display: flex; gap: 15px;">
-                        <NavLink href="/search" style="background: white; color: #e75480; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">
-                            <span style="margin-right: 10px;">🔍</span>
-                            Найти людей
-                        </NavLink>
-                        <NavLink href="/profile" style="background: transparent; border: 2px solid white; color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">
-                            <span style="margin-right: 10px;">👤</span>
-                            Мой профиль
-                        </NavLink>
-                    </div>
-                }
-                else
-                {
-                    <div style="display: flex; gap: 15px;">
-                        <NavLink href="/register" style="background: white; color: #e75480; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">
-                            <span style="margin-right: 10px;">📝</span>
-                            Зарегистрироваться
-                        </NavLink>
-                        <NavLink href="/login" style="background: transparent; border: 2px solid white; color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">
-                            <span style="margin-right: 10px;">🔑</span>
-                            Войти
-                        </NavLink>
-                    </div>
-                }
+
+                <!-- ПРОСТЫЕ ССЫЛКИ без проверки авторизации -->
+                <div style="display: flex; gap: 15px;">
+                    <a href="/search" style="background: white; color: #e75480; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+                        <span style="margin-right: 10px;">🔍</span>
+                        Найти людей
+                    </a>
+                    <a href="/login" style="background: transparent; border: 2px solid white; color: white; padding: 15px 30px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+                        <span style="margin-right: 10px;">🔑</span>
+                        Войти
+                    </a>
+                </div>
             </div>
             <div style="flex: 1; text-align: center;">
                 <div style="font-size: 120px;">❤️</div>

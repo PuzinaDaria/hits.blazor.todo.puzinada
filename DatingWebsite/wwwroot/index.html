@@ -67,5 +67,17 @@
     </div>
 
     <script src="_framework/blazor.web.js"></script>
+    <script>
+        // Проверяем localStorage при загрузке
+        window.addEventListener('load', function () {
+            console.log('Приложение загружено');
+
+            // Проверяем наличие пользователя в localStorage
+            var user = localStorage.getItem('currentUser');
+            if (user) {
+                console.log('Найден пользователь в localStorage:', JSON.parse(user));
+            }
+        });
+    </script>
 </body>
 </html>

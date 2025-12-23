@@ -1,188 +1,110 @@
 ﻿@page "/messages"
-@rendermode InteractiveServer
-@inject IUserService UserService
-@inject IAuthService AuthService
 
-<div style="display: flex; height: calc(100vh - 100px); background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.1);">
-    <!-- Список чатов -->
-    <div style="width: 350px; border-right: 1px solid #eee; display: flex; flex-direction: column;">
-        <div style="padding: 25px 20px; border-bottom: 1px solid #eee;">
-            <h2 style="margin: 0; color: #2c3e50;">Сообщения</h2>
+<div style="max-width: 1200px; margin: 30px auto;">
+    <div style="background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); padding: 30px;">
+        <h2 style="margin: 0 0 30px 0; color: #2c3e50;">Сообщения</h2>
+
+        <div id="messagesContainer">
+            <!-- Сообщения будут загружены через JavaScript -->
+            <div style="text-align: center; padding: 50px; color: #666;">
+                Загрузка чатов...
+            </div>
         </div>
-
-        <div style="flex: 1; overflow-y: auto; padding: 10px 0;">
-            @if (chats.Count == 0)
-            {
-                <div style="text-align: center; padding: 40px 20px; color: #666;">
-                    <div style="font-size: 48px; margin-bottom: 15px;">💬</div>
-                    <p>Нет сообщений</p>
-                    <NavLink href="/search" style="color: #e75480; text-decoration: none; margin-top: 15px; display: inline-block;">
-                        Найти людей для общения
-                    </NavLink>
-                </div>
-            }
-            else
-            {
-                @foreach (var chat in chats)
-                {
-                    <div style="padding: 15px 20px; cursor: pointer; border-bottom: 1px solid #f5f5f5;"
-                         @onclick="() => SelectChat(chat)">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div style="font-weight: bold; color: #2c3e50;">
-                                @GetChatPartnerName(chat)
-                            </div>
-                            <div style="font-size: 12px; color: #888;">
-                                @chat.LastMessageAt.ToString("HH:mm")
-                            </div>
-                        </div>
-                        <div style="color: #666; font-size: 14px; margin-top: 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            @chat.LastMessagePreview
-                        </div>
-                    </div>
-                }
-            }
-        </div>
-    </div>
-
-    <!-- Область сообщений -->
-    <div style="flex: 1; display: flex; flex-direction: column;">
-        @if (selectedChat != null)
-        {
-            <!-- Заголовок чата -->
-            <div style="padding: 20px 25px; border-bottom: 1px solid #eee; background: #f8f9fa;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <div style="font-size: 18px; font-weight: bold; color: #2c3e50;">
-                            @GetChatPartnerName(selectedChat)
-                        </div>
-                    </div>
-                    <NavLink href="/search" style="color: #e75480; text-decoration: none; font-size: 14px;">
-                        <span style="margin-right: 5px;">🔍</span>
-                        Найти еще
-                    </NavLink>
-                </div>
-            </div>
-
-            <!-- Сообщения -->
-            <div style="flex: 1; overflow-y: auto; padding: 25px; background: #f8f9fa;">
-                @if (messages.Count == 0)
-                {
-                    <div style="text-align: center; color: #666; padding: 40px;">
-                        <p>Начните диалог</p>
-                    </div>
-                }
-                else
-                {
-                    @foreach (var message in messages)
-                    {
-                        <div style="margin-bottom: 15px; display: flex;
-                                 @(message.SenderId == currentUserId ? "justify-content: flex-end;" : "justify-content: flex-start;")">
-                            <div style="max-width: 70%;">
-                                <div style="background: @(message.SenderId == currentUserId ? "#e75480" : "white");
-                                         color: @(message.SenderId == currentUserId ? "white" : "#333");
-                                         padding: 12px 16px;
-                                         border-radius: @(message.SenderId == currentUserId ? "18px 18px 4px 18px" : "18px 18px 18px 4px");
-                                         box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                                    <div>@message.Content</div>
-                                    <div style="font-size: 11px; opacity: 0.7; margin-top: 5px; text-align: right;">
-                                        @message.SentAt.ToString("HH:mm")
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                }
-            </div>
-
-            <!-- Поле ввода -->
-            <div style="padding: 20px 25px; border-top: 1px solid #eee; background: white;">
-                <div style="display: flex; gap: 10px;">
-                    <textarea @bind="newMessage"
-                              placeholder="Введите сообщение..."
-                              style="flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 8px; resize: none; font-size: 16px; min-height: 50px; max-height: 150px;"></textarea>
-                    <button @onclick="SendMessage"
-                            disabled="@string.IsNullOrWhiteSpace(newMessage)"
-                            style="background: #e75480; color: white; border: none; padding: 0 25px; border-radius: 8px; cursor: pointer; font-size: 16px;">
-                        Отправить
-                    </button>
-                </div>
-            </div>
-        }
-        else
-        {
-            <!-- Если чат не выбран -->
-            <div style="flex: 1; display: flex; align-items: center; justify-content: center; color: #666;">
-                <div style="text-align: center;">
-                    <div style="font-size: 64px; margin-bottom: 20px;">💬</div>
-                    <p style="font-size: 18px; margin-bottom: 10px;">Выберите чат</p>
-                    <p>Выберите чат из списка для начала общения</p>
-                    <NavLink href="/search" style="color: #e75480; text-decoration: none; margin-top: 20px; display: inline-block;">
-                        Найти людей для общения
-                    </NavLink>
-                </div>
-            </div>
-        }
     </div>
 </div>
 
-@code {
-    private List<Chat> chats = new();
-    private List<Message> messages = new();
-    private Chat? selectedChat;
-    private string newMessage = "";
-    private int currentUserId;
+<script src="js/users.js"></script>
+<script src="js/chat.js"></script>
 
-    protected override async Task OnInitializedAsync()
-    {
-        if (AuthService.CurrentUser != null)
-        {
-            currentUserId = AuthService.CurrentUser.Id;
-            await LoadChats();
-        }
-    }
-
-    private async Task LoadChats()
-    {
-        if (currentUserId > 0)
-        {
-            chats = await UserService.GetUserChatsAsync(currentUserId);
-        }
-    }
-
-    private async Task SelectChat(Chat chat)
-    {
-        selectedChat = chat;
-        var partnerId = chat.User1Id == currentUserId ? chat.User2Id : chat.User1Id;
-        messages = await UserService.GetChatMessagesAsync(currentUserId, partnerId);
-        StateHasChanged();
-
-        // Прокрутка вниз
-        await Task.Delay(100);
-    }
-
-    private string GetChatPartnerName(Chat chat)
-    {
-        if (AuthService.CurrentUser == null) return "Пользователь";
-
-        var partnerId = chat.User1Id == currentUserId ? chat.User2Id : chat.User1Id;
-
-        // Здесь нужно получить имя пользователя из базы
-        // Пока возвращаем ID
-        return $"Пользователь {partnerId}";
-    }
-
-    private async Task SendMessage()
-    {
-        if (string.IsNullOrWhiteSpace(newMessage) || selectedChat == null || AuthService.CurrentUser == null)
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Проверяем авторизацию
+        if (localStorage.getItem('isLoggedIn') !== 'true') {
+            alert('Для просмотра сообщений необходимо войти в систему');
+            window.location.href = '/login';
             return;
+        }
 
-        var receiverId = selectedChat.User1Id == currentUserId ? selectedChat.User2Id : selectedChat.User1Id;
+        displayMessages();
+    });
 
-        await UserService.SendMessageAsync(currentUserId, receiverId, newMessage);
-        newMessage = "";
+    function displayMessages() {
+        const container = document.getElementById('messagesContainer');
+        const chats = getUserChats();
 
-        // Обновляем сообщения
-        await SelectChat(selectedChat);
-        await LoadChats(); // Обновляем список чатов
+        if (chats.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 50px; color: #666;">
+                    <div style="font-size: 64px; margin-bottom: 20px;">💬</div>
+                    <h3 style="color: #2c3e50; margin-bottom: 10px;">У вас пока нет сообщений</h3>
+                    <p style="font-size: 16px; margin-bottom: 25px; max-width: 500px; margin-left: auto; margin-right: auto;">
+                        Начните общение с другими пользователями, чтобы здесь появились чаты.
+                    </p>
+                    <a href="/search"
+                       style="display: inline-block; background: #e75480; color: white; padding: 12px 30px; border-radius: 8px; text-decoration: none; font-size: 16px; margin-top: 10px;">
+                        🔍 Найти людей для общения
+                    </a>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 25px;">';
+
+        chats.forEach(chat => {
+            const user = getUserById(chat.userId);
+            const initials = user ? (user.firstName[0] + user.lastName[0]).toUpperCase() : '??';
+            const time = new Date(chat.lastMessageTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const date = new Date(chat.lastMessageTime).toLocaleDateString();
+            const lastMessage = chat.lastMessage || "Нет сообщений";
+
+            html += `
+                <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; border: 1px solid #eee; cursor: pointer; transition: all 0.3s;"
+                     onclick="openChat(${chat.userId})"
+                     onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 20px rgba(0,0,0,0.1)';"
+                     onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                        <div style="width: 50px; height: 50px; background: #17a2b8; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-right: 15px;">
+                            ${initials}
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="font-weight: bold; color: #2c3e50; font-size: 16px;">
+                                ${chat.userName}
+                            </div>
+                            <div style="color: #666; font-size: 13px; margin-top: 3px;">
+                                ${lastMessage.length > 40 ? lastMessage.substring(0, 40) + '...' : lastMessage}
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 12px; color: #888;">${time}</div>
+                            <div style="font-size: 11px; color: #888;">${date}</div>
+                            ${chat.unreadCount > 0 ?
+                                `<div style="background: #e75480; color: white; width: 22px; height: 22px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; margin-top: 5px;">${chat.unreadCount}</div>`
+                                : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        html += '</div>';
+        container.innerHTML = html;
     }
-}
+
+    function openChat(userId) {
+        const user = getUserById(userId);
+        if (user) {
+            // Получаем или создаем чат
+            const chat = getOrCreateChat(userId, `${user.firstName} ${user.lastName}`);
+
+            // Переходим на страницу чата
+            window.location.href = `/chat/${chat.id}`;
+        }
+    }
+</script>
+
+<style>
+    #messagesContainer > div > div:hover {
+        background: white !important;
+    }
+</style>

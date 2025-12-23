@@ -1,208 +1,633 @@
 ﻿@page "/profile"
-@rendermode InteractiveServer
-@inject IAuthService AuthService
-@inject IUserService UserService
 
-<div style="max-width: 1000px; margin: 30px auto;">
-    @if (user != null)
-    {
-        <div style="display: grid; grid-template-columns: 1fr 350px; gap: 30px;">
-            <!-- Основная информация -->
-            <div>
-                <div style="background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); overflow: hidden; margin-bottom: 30px;">
-                    <div style="background: #e75480; color: white; padding: 25px 30px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <h2 style="margin: 0; font-size: 28px;">Мой профиль</h2>
-                            <button @onclick="ToggleEditMode"
-                                    style="background: white; color: #e75480; border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: bold;">
-                                @(isEditing ? "Отменить" : "Редактировать")
-                            </button>
-                        </div>
-                    </div>
+<div style="max-width: 800px; margin: 30px auto;">
+    <div style="background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); overflow: hidden;">
+        <!-- Заголовок -->
+        <div style="background: #e75480; color: white; padding: 25px 30px;">
+            <h2 style="margin: 0; font-size: 28px;" id="profileTitle">Мой профиль</h2>
+        </div>
 
-                    <div style="padding: 30px;">
-                        @if (isEditing)
-                        {
-                            <!-- Форма редактирования -->
-                            <form @onsubmit="SaveProfile">
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
-                                    <div>
-                                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Имя</label>
-                                        <input type="text" @bind="user.FirstName" required
-                                               style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;" />
-                                    </div>
-                                    <div>
-                                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Фамилия</label>
-                                        <input type="text" @bind="user.LastName" required
-                                               style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;" />
-                                    </div>
-                                </div>
-
-                                <div style="margin-bottom: 20px;">
-                                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Возраст</label>
-                                    <input type="number" @bind="user.Age" min="18" max="100" required
-                                           style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;" />
-                                </div>
-
-                                <div style="margin-bottom: 20px;">
-                                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">О себе</label>
-                                    <textarea @bind="user.Description" rows="3"
-                                              style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;"></textarea>
-                                </div>
-
-                                <div style="margin-bottom: 20px;">
-                                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Ищу</label>
-                                    <select @bind="user.LookingFor" required
-                                            style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; background: white;">
-                                        <option value="Друга">Друга</option>
-                                        <option value="Девушку">Девушку</option>
-                                        <option value="Парня">Парня</option>
-                                        <option value="Серьезные отношения">Серьезные отношения</option>
-                                        <option value="Просто общение">Просто общение</option>
-                                    </select>
-                                </div>
-
-                                <div style="margin-bottom: 25px;">
-                                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Предпочтительный возраст</label>
-                                    <select @bind="user.PreferredAgeRange" required
-                                            style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; background: white;">
-                                        <option value="18-25">18-25 лет</option>
-                                        <option value="26-35">26-35 лет</option>
-                                        <option value="36-45">36-45 лет</option>
-                                        <option value="46+">46+ лет</option>
-                                        <option value="Любой">Любой</option>
-                                    </select>
-                                </div>
-
-                                <button type="submit"
-                                        style="background: #28a745; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 16px; cursor: pointer;">
-                                    Сохранить изменения
-                                </button>
-                            </form>
-                        }
-                        else
-                        {
-                            <!-- Просмотр профиля -->
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 25px;">
-                                <div>
-                                    <div style="color: #666; font-size: 14px; margin-bottom: 5px;">Имя</div>
-                                    <div style="font-size: 18px; font-weight: 600;">@user.FirstName</div>
-                                </div>
-                                <div>
-                                    <div style="color: #666; font-size: 14px; margin-bottom: 5px;">Фамилия</div>
-                                    <div style="font-size: 18px; font-weight: 600;">@user.LastName</div>
-                                </div>
-                            </div>
-
-                            <div style="margin-bottom: 25px;">
-                                <div style="color: #666; font-size: 14px; margin-bottom: 5px;">Возраст</div>
-                                <div style="font-size: 18px; font-weight: 600;">@user.Age лет</div>
-                            </div>
-
-                            <div style="margin-bottom: 25px;">
-                                <div style="color: #666; font-size: 14px; margin-bottom: 5px;">Email</div>
-                                <div style="font-size: 18px; font-weight: 600;">@user.Email</div>
-                            </div>
-
-                            @if (!string.IsNullOrEmpty(user.Description))
-                            {
-                                <div style="margin-bottom: 25px;">
-                                    <div style="color: #666; font-size: 14px; margin-bottom: 5px;">О себе</div>
-                                    <div style="font-size: 16px; line-height: 1.6;">@user.Description</div>
-                                </div>
-                            }
-
-                            <div style="margin-bottom: 25px;">
-                                <div style="color: #666; font-size: 14px; margin-bottom: 5px;">Ищу</div>
-                                <div style="font-size: 18px; font-weight: 600;">@user.LookingFor</div>
-                            </div>
-
-                            <div style="margin-bottom: 25px;">
-                                <div style="color: #666; font-size: 14px; margin-bottom: 5px;">Предпочтительный возраст</div>
-                                <div style="font-size: 18px; font-weight: 600;">@user.PreferredAgeRange</div>
-                            </div>
-
-                            @if (!string.IsNullOrEmpty(user.Interests))
-                            {
-                                <div>
-                                    <div style="color: #666; font-size: 14px; margin-bottom: 5px;">Интересы</div>
-                                    <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px;">
-                                        @foreach (var interest in user.Interests.Split(", "))
-                                        {
-                                            <span style="background: #17a2b8; color: white; padding: 6px 12px; border-radius: 20px; font-size: 14px;">
-                                                @interest
-                                            </span>
-                                        }
-                                    </div>
-                                </div>
-                            }
-                        }
-                    </div>
-                </div>
-            </div>
-
-            <!-- Боковая панель -->
-            <div>
-                <!-- Статистика -->
-                <div style="background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); padding: 25px; margin-bottom: 20px;">
-                    <h3 style="margin: 0 0 20px 0; color: #2c3e50;">Статистика</h3>
-                    <div style="text-align: center; margin-bottom: 25px;">
-                        <div style="width: 100px; height: 100px; background: #e75480; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; margin: 0 auto 15px auto;">
-                            @GetInitials()
-                        </div>
-                        <div style="font-size: 20px; font-weight: bold; margin-bottom: 5px;">@user.FirstName @user.LastName</div>
-                        <div style="color: #666;">Участник с @user.CreatedAt.ToString("MMMM yyyy")</div>
-                    </div>
-
-                    <div style="border-top: 1px solid #eee; padding-top: 20px;">
-                        <NavLink href="/search" style="display: block; padding: 15px; border-radius: 8px; background: #f8f9fa; color: #333; text-decoration: none; margin-bottom: 10px; transition: all 0.3s;">
-                            <span style="margin-right: 10px;">🔍</span>
-                            Найти людей
-                        </NavLink>
-                        <NavLink href="/messages" style="display: block; padding: 15px; border-radius: 8px; background: #f8f9fa; color: #333; text-decoration: none; transition: all 0.3s;">
-                            <span style="margin-right: 10px;">💬</span>
-                            Мои сообщения
-                        </NavLink>
-                    </div>
-                </div>
+        <!-- Содержимое -->
+        <div style="padding: 30px;" id="profileContent">
+            <!-- Профиль будет загружен через JavaScript -->
+            <div style="text-align: center; padding: 50px; color: #666;">
+                <div style="font-size: 48px; margin-bottom: 20px;">⏳</div>
+                <h3 style="color: #2c3e50;">Загрузка профиля...</h3>
+                <p>Пожалуйста, подождите</p>
             </div>
         </div>
-    }
-    else
-    {
-        <div style="text-align: center; padding: 50px;">
-            <p>Пожалуйста, войдите в систему</p>
-            <NavLink href="/login" style="color: #e75480; text-decoration: none;">Войти</NavLink>
-        </div>
-    }
+    </div>
 </div>
 
-@code {
-    private User? user;
-    private bool isEditing = false;
+<!-- Модальное окно редактирования профиля -->
+<div id="editProfileModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 1000;">
+    <div style="background: white; width: 90%; max-width: 800px; max-height: 90vh; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;">
+        <!-- Заголовок модалки -->
+        <div style="background: #e75480; color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; font-size: 22px;">Редактировать профиль</h3>
+            <button type="button" id="closeEditModalBtn"
+                    style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0;">
+                ×
+            </button>
+        </div>
 
-    protected override void OnInitialized()
-    {
-        user = AuthService.CurrentUser;
-    }
+        <!-- Форма редактирования -->
+        <div style="flex: 1; overflow-y: auto; padding: 20px 30px;">
+            <form id="editProfileForm">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Имя *</label>
+                        <input type="text" id="editFirstName" required
+                               style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;" />
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Фамилия *</label>
+                        <input type="text" id="editLastName" required
+                               style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;" />
+                    </div>
+                </div>
 
-    private void ToggleEditMode()
-    {
-        isEditing = !isEditing;
-    }
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Возраст *</label>
+                        <input type="number" id="editAge" min="18" max="100" required
+                               style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px;" />
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Кого ищу *</label>
+                        <select id="editLookingFor" required
+                                style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; background: white;">
+                            <option value="">Выберите...</option>
+                            <option value="Друга">Друга</option>
+                            <option value="Девушку">Девушку</option>
+                            <option value="Парня">Парня</option>
+                            <option value="Серьезные отношения">Серьезные отношения</option>
+                            <option value="Просто общение">Просто общение</option>
+                        </select>
+                    </div>
+                </div>
 
-    private async Task SaveProfile()
-    {
-        if (user != null)
-        {
-            await UserService.UpdateUserAsync(user);
-            isEditing = false;
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Предпочтительный возраст *</label>
+                    <select id="editPreferredAge" required
+                            style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; background: white;">
+                        <option value="">Выберите...</option>
+                        <option value="18-25">18-25 лет</option>
+                        <option value="26-35">26-35 лет</option>
+                        <option value="36-45">36-45 лет</option>
+                        <option value="46+">46+ лет</option>
+                        <option value="Любой">Любой</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">О себе</label>
+                    <textarea id="editDescription" rows="4"
+                              style="width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; resize: vertical;"></textarea>
+                </div>
+
+                <!-- Интересы -->
+                <div style="margin-bottom: 30px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #333;">Интересы</label>
+                    <div style="margin-bottom: 10px;">
+                        <button type="button" id="editSelectInterestsBtn"
+                                style="background: white; color: #e75480; border: 2px solid #e75480; padding: 12px 25px; border-radius: 8px; font-size: 16px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                            <span>🏷️</span>
+                            <span>Выбрать интересы</span>
+                        </button>
+
+                        <span id="editInterestsCount" style="background: #e75480; color: white; padding: 5px 12px; border-radius: 20px; margin-left: 15px; font-size: 14px; display: none;">
+                            Выбрано: <span id="editSelectedCount">0</span>
+                        </span>
+                    </div>
+
+                    <div id="editSelectedInterestsContainer" style="background: #f8f9fa; padding: 15px; border-radius: 8px; display: none;">
+                        <div style="font-size: 14px; color: #666; margin-bottom: 8px;">Выбранные интересы:</div>
+                        <div id="editInterestsList" style="display: flex; flex-wrap: wrap; gap: 8px;">
+                            <!-- Сюда будут добавляться выбранные интересы -->
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Футер модалки -->
+        <div style="padding: 20px 30px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 12px;">
+            <button type="button" id="cancelEditBtn"
+                    style="background: #6c757d; color: white; border: none; padding: 10px 25px; border-radius: 6px; cursor: pointer;">
+                Отмена
+            </button>
+            <button type="button" id="saveEditBtn"
+                    style="background: #e75480; color: white; border: none; padding: 10px 25px; border-radius: 6px; cursor: pointer;">
+                Сохранить изменения
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Модальное окно выбора интересов для редактирования -->
+<div id="editInterestsModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; align-items: center; justify-content: center; z-index: 2000;">
+    <div style="background: white; width: 90%; max-width: 800px; max-height: 80vh; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;">
+        <!-- Заголовок модалки -->
+        <div style="background: #17a2b8; color: white; padding: 20px 30px; display: flex; justify-content: space-between; align-items: center;">
+            <h3 style="margin: 0; font-size: 22px;">Выбор интересов</h3>
+            <button type="button" id="closeEditInterestsBtn"
+                    style="background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0;">
+                ×
+            </button>
+        </div>
+
+        <!-- Содержимое модалки -->
+        <div id="editInterestsContainer" style="flex: 1; overflow-y: auto; padding: 20px 30px;">
+            <!-- Интересы будут добавлены через JavaScript -->
+        </div>
+
+        <!-- Футер модалки -->
+        <div style="padding: 20px 30px; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 12px;">
+            <button type="button" id="cancelEditInterestsBtn"
+                    style="background: #6c757d; color: white; border: none; padding: 10px 25px; border-radius: 6px; cursor: pointer;">
+                Отмена
+            </button>
+            <button type="button" id="saveEditInterestsBtn"
+                    style="background: #17a2b8; color: white; border: none; padding: 10px 25px; border-radius: 6px; cursor: pointer;">
+                Сохранить
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Глобальные переменные для редактирования
+    let editSelectedInterests = [];
+    let currentUser = null;
+
+    // Список доступных интересов
+    const availableInterests = [
+        "Кино", "Музыка", "Книги", "Спорт", "Путешествия",
+        "Фотография", "Кулинария", "Программирование", "Игры", "Танцы",
+        "Животные", "Наука", "Искусство", "Мода", "Автомобили",
+        "Йога", "Садоводство", "Шахматы", "История", "Психология"
+    ];
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Проверяем авторизацию
+        if (localStorage.getItem('isLoggedIn') !== 'true') {
+            alert('Для просмотра профиля необходимо войти в систему');
+            window.location.href = '/login';
+            return;
+        }
+
+        // Загружаем данные пользователя
+        loadUserProfile();
+
+        // Инициализируем модальные окна редактирования
+        initEditModals();
+    });
+
+    function loadUserProfile() {
+        console.log('Загрузка профиля пользователя');
+
+        try {
+            // Получаем текущего пользователя из localStorage
+            const userJson = localStorage.getItem('currentUser');
+
+            if (!userJson) {
+                showError('Пользователь не найден');
+                return;
+            }
+
+            currentUser = JSON.parse(userJson);
+            console.log('Текущий пользователь:', currentUser);
+
+            // Определяем инициалы для аватарки
+            const firstName = currentUser.firstName || 'Пользователь';
+            const lastName = currentUser.lastName || '';
+            const initials = (firstName[0] + (lastName ? lastName[0] : '')).toUpperCase();
+
+            // Создаем HTML профиля
+            const profileHTML = `
+                <div style="text-align: center; margin-bottom: 40px;">
+                    <div style="width: 120px; height: 120px; background: #e75480; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 40px; margin: 0 auto 20px auto;">
+                        ${initials}
+                    </div>
+                    <h3 style="margin: 0 0 10px 0; color: #2c3e50;">${firstName} ${lastName}</h3>
+                    <div style="color: #666; margin-bottom: 5px;">${currentUser.email || 'Email не указан'}</div>
+                    ${currentUser.age ? `<div style="color: #666; margin-bottom: 15px;">${currentUser.age} лет</div>` : ''}
+                </div>
+
+                ${currentUser.description ? `
+                <div style="margin-bottom: 30px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 15px;">О себе</h4>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; color: #666; line-height: 1.6;">
+                        ${currentUser.description}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${currentUser.lookingFor ? `
+                <div style="margin-bottom: 30px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 15px;">Ищу</h4>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; color: #666;">
+                        ${currentUser.lookingFor}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${currentUser.preferredAgeRange ? `
+                <div style="margin-bottom: 30px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 15px;">Предпочтительный возраст</h4>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; color: #666;">
+                        ${currentUser.preferredAgeRange}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${currentUser.interests && currentUser.interests.length > 0 ? `
+                <div style="margin-bottom: 30px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 15px;">Интересы</h4>
+                    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                        ${currentUser.interests.map(interest => `
+                            <span style="background: #17a2b8; color: white; padding: 8px 15px; border-radius: 20px;">${interest}</span>
+                        `).join('')}
+                    </div>
+                </div>
+                ` : ''}
+
+                ${currentUser.createdAt ? `
+                <div style="margin-bottom: 30px;">
+                    <h4 style="color: #2c3e50; margin-bottom: 15px;">Дата регистрации</h4>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; color: #666;">
+                        ${new Date(currentUser.createdAt).toLocaleDateString('ru-RU', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                        })}
+                    </div>
+                </div>
+                ` : ''}
+
+                <!-- Кнопки действий -->
+                <div style="display: flex; gap: 15px; justify-content: center; margin-top: 40px;">
+                    <button onclick="editProfile()"
+                            style="background: #e75480; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 16px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        ✏️ Редактировать профиль
+                    </button>
+
+                    <button onclick="deleteProfile()"
+                            style="background: #dc3545; color: white; border: none; padding: 12px 30px; border-radius: 8px; font-size: 16px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                        🗑️ Удалить профиль
+                    </button>
+                </div>
+            `;
+
+            // Вставляем HTML в страницу
+            document.getElementById('profileContent').innerHTML = profileHTML;
+
+        } catch (error) {
+            console.error('Ошибка при загрузке профиля:', error);
+            showError('Ошибка при загрузке профиля: ' + error.message);
         }
     }
 
-    private string GetInitials()
-    {
-        if (user == null) return "?";
-        return $"{user.FirstName[0]}{user.LastName[0]}".ToUpper();
+    function showError(message) {
+        document.getElementById('profileContent').innerHTML = `
+            <div style="text-align: center; padding: 50px; color: #dc3545;">
+                <div style="font-size: 48px; margin-bottom: 20px;">❌</div>
+                <h3>Ошибка</h3>
+                <p>${message}</p>
+                <button onclick="window.location.href='/login'"
+                        style="background: #6c757d; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; margin-top: 15px;">
+                    Перейти к входу
+                </button>
+            </div>
+        `;
     }
-}
+
+    // Инициализация модальных окон редактирования
+    function initEditModals() {
+        // Модальное окно редактирования профиля
+        const closeEditBtn = document.getElementById('closeEditModalBtn');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const saveEditBtn = document.getElementById('saveEditBtn');
+        const editModal = document.getElementById('editProfileModal');
+
+        if (closeEditBtn) {
+            closeEditBtn.addEventListener('click', closeEditProfileModal);
+        }
+
+        if (cancelEditBtn) {
+            cancelEditBtn.addEventListener('click', closeEditProfileModal);
+        }
+
+        if (saveEditBtn) {
+            saveEditBtn.addEventListener('click', saveProfileChanges);
+        }
+
+        if (editModal) {
+            editModal.addEventListener('click', function(event) {
+                if (event.target === editModal) {
+                    closeEditProfileModal();
+                }
+            });
+        }
+
+        // Модальное окно выбора интересов для редактирования
+        const editSelectInterestsBtn = document.getElementById('editSelectInterestsBtn');
+        const closeEditInterestsBtn = document.getElementById('closeEditInterestsBtn');
+        const cancelEditInterestsBtn = document.getElementById('cancelEditInterestsBtn');
+        const saveEditInterestsBtn = document.getElementById('saveEditInterestsBtn');
+        const editInterestsModal = document.getElementById('editInterestsModal');
+
+        if (editSelectInterestsBtn) {
+            editSelectInterestsBtn.addEventListener('click', showEditInterestsModal);
+        }
+
+        if (closeEditInterestsBtn) {
+            closeEditInterestsBtn.addEventListener('click', closeEditInterestsModal);
+        }
+
+        if (cancelEditInterestsBtn) {
+            cancelEditInterestsBtn.addEventListener('click', closeEditInterestsModal);
+        }
+
+        if (saveEditInterestsBtn) {
+            saveEditInterestsBtn.addEventListener('click', saveEditInterests);
+        }
+
+        if (editInterestsModal) {
+            editInterestsModal.addEventListener('click', function(event) {
+                if (event.target === editInterestsModal) {
+                    closeEditInterestsModal();
+                }
+            });
+        }
+    }
+
+    // Функции для модального окна редактирования профиля
+    function editProfile() {
+        console.log('Редактирование профиля');
+
+        if (!currentUser) {
+            alert('Данные пользователя не загружены');
+            return;
+        }
+
+        // Заполняем форму текущими данными
+        document.getElementById('editFirstName').value = currentUser.firstName || '';
+        document.getElementById('editLastName').value = currentUser.lastName || '';
+        document.getElementById('editAge').value = currentUser.age || '';
+        document.getElementById('editDescription').value = currentUser.description || '';
+        document.getElementById('editLookingFor').value = currentUser.lookingFor || '';
+        document.getElementById('editPreferredAge').value = currentUser.preferredAgeRange || '';
+
+        // Загружаем интересы пользователя
+        editSelectedInterests = currentUser.interests || [];
+        updateEditInterestsDisplay();
+
+        // Показываем модальное окно
+        document.getElementById('editProfileModal').style.display = 'flex';
+    }
+
+    function closeEditProfileModal() {
+        document.getElementById('editProfileModal').style.display = 'none';
+    }
+
+    function saveProfileChanges() {
+        console.log('Сохранение изменений профиля');
+
+        // Собираем данные из формы
+        const updatedData = {
+            firstName: document.getElementById('editFirstName').value.trim(),
+            lastName: document.getElementById('editLastName').value.trim(),
+            age: parseInt(document.getElementById('editAge').value),
+            description: document.getElementById('editDescription').value.trim(),
+            lookingFor: document.getElementById('editLookingFor').value,
+            preferredAgeRange: document.getElementById('editPreferredAge').value,
+            interests: editSelectedInterests
+        };
+
+        console.log('Обновленные данные:', updatedData);
+
+        // Валидация
+        if (!validateEditForm(updatedData)) {
+            return;
+        }
+
+        try {
+            // Обновляем данные пользователя
+            const updatedUser = {
+                ...currentUser,
+                ...updatedData
+            };
+
+            // Сохраняем обновленного пользователя в localStorage (текущий пользователь)
+            localStorage.setItem('currentUser', JSON.stringify(updatedUser));
+
+            // Обновляем пользователя в общем списке пользователей
+            const users = JSON.parse(localStorage.getItem('datingWebsiteUsers') || '[]');
+            const userIndex = users.findIndex(u => u.email === currentUser.email);
+
+            if (userIndex !== -1) {
+                // Сохраняем пароль для пользователя в общем списке
+                const userPassword = users[userIndex].password;
+                const userWithPassword = {
+                    ...updatedUser,
+                    password: userPassword
+                };
+
+                users[userIndex] = userWithPassword;
+                localStorage.setItem('datingWebsiteUsers', JSON.stringify(users));
+            }
+
+            // Обновляем текущего пользователя
+            currentUser = updatedUser;
+
+            // Закрываем модальное окно
+            closeEditProfileModal();
+
+            // Показываем уведомление
+            alert('Профиль успешно обновлен!');
+
+            // Перезагружаем профиль
+            loadUserProfile();
+
+            // Обновляем меню
+            if (typeof updateMenu !== 'undefined') {
+                updateMenu();
+            }
+
+        } catch (error) {
+            console.error('Ошибка при сохранении профиля:', error);
+            alert('Ошибка при сохранении профиля: ' + error.message);
+        }
+    }
+
+    function validateEditForm(formData) {
+        if (!formData.firstName || !formData.lastName) {
+            alert('Имя и фамилия обязательны!');
+            return false;
+        }
+
+        if (!formData.age || formData.age < 18 || formData.age > 100) {
+            alert('Возраст должен быть от 18 до 100 лет!');
+            return false;
+        }
+
+        if (!formData.lookingFor) {
+            alert('Поле "Кого ищу" обязательно!');
+            return false;
+        }
+
+        if (!formData.preferredAgeRange) {
+            alert('Поле "Предпочтительный возраст" обязательно!');
+            return false;
+        }
+
+        return true;
+    }
+
+    // Функции для модального окна выбора интересов (редактирование)
+    function showEditInterestsModal() {
+        console.log('Открытие окна выбора интересов для редактирования');
+        populateEditInterests();
+        document.getElementById('editInterestsModal').style.display = 'flex';
+    }
+
+    function closeEditInterestsModal() {
+        document.getElementById('editInterestsModal').style.display = 'none';
+    }
+
+    function saveEditInterests() {
+        console.log('Сохранение интересов для редактирования:', editSelectedInterests);
+        updateEditInterestsDisplay();
+        closeEditInterestsModal();
+    }
+
+    function populateEditInterests() {
+        const container = document.getElementById('editInterestsContainer');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        // Создаем сетку для интересов
+        const grid = document.createElement('div');
+        grid.style.display = 'grid';
+        grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(200px, 1fr))';
+        grid.style.gap = '15px';
+
+        // Добавляем каждый интерес
+        availableInterests.forEach((interest, index) => {
+            const item = document.createElement('div');
+            item.style.cssText = 'display: flex; align-items: center; padding: 12px; border: 2px solid #ddd; border-radius: 8px; cursor: pointer;';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = `edit-interest-${index}`;
+            checkbox.checked = editSelectedInterests.includes(interest);
+            checkbox.style.cssText = 'margin-right: 12px; width: 18px; height: 18px; cursor: pointer;';
+
+            // Обработчик для чекбокса
+            checkbox.addEventListener('click', function(event) {
+                event.stopPropagation(); // Предотвращаем всплытие
+                toggleEditInterest(interest);
+            });
+
+            const label = document.createElement('label');
+            label.htmlFor = `edit-interest-${index}`;
+            label.textContent = interest;
+            label.style.cssText = 'flex: 1; cursor: pointer;';
+
+            // Обработчик для клика на весь элемент
+            item.addEventListener('click', function(event) {
+                if (event.target !== checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    toggleEditInterest(interest);
+                }
+            });
+
+            item.appendChild(checkbox);
+            item.appendChild(label);
+            grid.appendChild(item);
+        });
+
+        container.appendChild(grid);
+    }
+
+    function toggleEditInterest(interestName) {
+        console.log(`toggleEditInterest: ${interestName}`);
+
+        if (editSelectedInterests.includes(interestName)) {
+            // Удаляем из выбранных
+            editSelectedInterests = editSelectedInterests.filter(i => i !== interestName);
+        } else {
+            // Добавляем в выбранные
+            editSelectedInterests.push(interestName);
+        }
+
+        console.log('Текущие выбранные интересы (редактирование):', editSelectedInterests);
+    }
+
+    function updateEditInterestsDisplay() {
+        const countSpan = document.getElementById('editSelectedCount');
+        const interestsCount = document.getElementById('editInterestsCount');
+        const container = document.getElementById('editSelectedInterestsContainer');
+        const list = document.getElementById('editInterestsList');
+
+        if (!countSpan || !interestsCount || !container || !list) return;
+
+        if (editSelectedInterests.length > 0) {
+            // Обновляем счетчик
+            countSpan.textContent = editSelectedInterests.length;
+            interestsCount.style.display = 'inline-block';
+
+            // Обновляем список интересов
+            list.innerHTML = '';
+            editSelectedInterests.forEach(interest => {
+                const badge = document.createElement('span');
+                badge.textContent = interest;
+                badge.style.cssText = 'background: #17a2b8; color: white; padding: 5px 12px; border-radius: 20px; font-size: 14px;';
+                list.appendChild(badge);
+            });
+
+            // Показываем контейнер
+            container.style.display = 'block';
+        } else {
+            // Скрываем элементы
+            interestsCount.style.display = 'none';
+            container.style.display = 'none';
+        }
+    }
+
+    function deleteProfile() {
+        if (confirm('Вы уверены, что хотите удалить свой профиль? Это действие нельзя отменить.')) {
+            try {
+                // Получаем текущего пользователя
+                const userJson = localStorage.getItem('currentUser');
+                if (!userJson) return;
+
+                const user = JSON.parse(userJson);
+
+                // Удаляем пользователя из списка пользователей
+                const users = JSON.parse(localStorage.getItem('datingWebsiteUsers') || '[]');
+                const updatedUsers = users.filter(u => u.email !== user.email);
+                localStorage.setItem('datingWebsiteUsers', JSON.stringify(updatedUsers));
+
+                // Удаляем текущего пользователя
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('isLoggedIn');
+
+                // Обновляем меню
+                if (typeof updateMenu !== 'undefined') {
+                    updateMenu();
+                }
+
+                alert('Профиль успешно удален');
+                window.location.href = '/';
+
+            } catch (error) {
+                console.error('Ошибка при удалении профиля:', error);
+                alert('Ошибка при удалении профиля');
+            }
+        }
+    }
+</script>
