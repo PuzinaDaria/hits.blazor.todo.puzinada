@@ -1,6 +1,6 @@
 ﻿@page "/search"
-<script src="js/users.js"></script>
-<script src="js/chat.js"></script>
+<script src="/js/users.js"></script>
+<script src="/js/chat.js"></script>
 
 <div style="max-width: 1200px; margin: 30px auto;">
     <div style="background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); padding: 30px;">
@@ -250,7 +250,7 @@
     }
 
     // Функция отправки сообщения - ТОЛЬКО ОДНА ФУНКЦИЯ!
-    function sendMessageToUser(userId) {
+        function sendMessageToUser(userId) {
         if (event) event.stopPropagation();
 
         console.log('Отправка сообщения пользователю ID:', userId);
@@ -276,12 +276,12 @@
             }
         }
 
-        // Резервный вариант: создаем чат вручную
+        // Резервный вариант: создаем чат вручную, но проверяем существующий
         console.log('Создаю чат вручную');
         const chatsJson = localStorage.getItem('datingWebsiteChats') || '[]';
         let chats = JSON.parse(chatsJson);
 
-        // Ищем существующий чат
+        // Ищем существующий чат - ВАЖНО: сравниваем как строки!
         let chat = chats.find(c => String(c.userId) === String(userId));
 
         if (!chat) {
@@ -297,6 +297,8 @@
             chats.push(chat);
             localStorage.setItem('datingWebsiteChats', JSON.stringify(chats));
             console.log('Создан новый чат:', chat);
+        } else {
+            console.log('Найден существующий чат:', chat);
         }
 
         console.log('Переход к чату ID:', chat.id);

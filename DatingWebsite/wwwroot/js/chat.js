@@ -8,43 +8,6 @@ const MESSAGES_KEY = 'datingWebsiteMessages';
 function initializeChats() {
     let chats = JSON.parse(localStorage.getItem(CHATS_KEY) || '[]');
     let messages = JSON.parse(localStorage.getItem(MESSAGES_KEY) || '[]');
-
-    // Если нет чатов, создаём тестовые
-
-    // Если нет сообщений, создаём тестовые
-    if (messages.length === 0) {
-        messages = [
-            {
-                id: 1,
-                chatId: 1,
-                senderId: 1, // Анна
-                receiverId: 0, // Текущий пользователь
-                text: "Привет! Как дела?",
-                time: new Date(Date.now() - 3600000).toISOString(),
-                isRead: false
-            },
-            {
-                id: 2,
-                chatId: 1,
-                senderId: 0, // Текущий пользователь
-                receiverId: 1, // Анна
-                text: "Привет! Всё отлично, спасибо!",
-                time: new Date(Date.now() - 3500000).toISOString(),
-                isRead: true
-            },
-            {
-                id: 3,
-                chatId: 2,
-                senderId: 2, // Максим
-                receiverId: 0, // Текущий пользователь
-                text: "Посмотрел твой профиль, интересно...",
-                time: new Date(Date.now() - 86400000).toISOString(),
-                isRead: true
-            }
-        ];
-
-        localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
-    }
 }
 
 // Получить все чаты текущего пользователя
@@ -54,13 +17,15 @@ function getUserChats() {
 }
 
 // Получить или создать чат с пользователем
+// Получить или создать чат с пользователем
 function getOrCreateChat(userId, userName) {
     const chats = getUserChats();
 
-    // Ищем существующий чат
-    let chat = chats.find(c => c.userId === userId);
+    // Ищем существующий чат - СРАВНИВАЕМ КАК ЧИСЛА!
+    let chat = chats.find(c => Number(c.userId) === Number(userId));
 
     if (!chat) {
+        console.log('Создаем новый чат для пользователя ID:', userId);
         // Создаем новый чат
         chat = {
             id: Date.now(),
@@ -73,10 +38,48 @@ function getOrCreateChat(userId, userName) {
 
         chats.push(chat);
         localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
+        console.log('Новый чат создан:', chat);
+    } else {
+        console.log('Найден существующий чат:', chat);
     }
 
     return chat;
 }
+
+// Добавь в конец chat.js
+function cleanupDuplicateChats() {
+    const chats = getUserChats();
+    const uniqueChats = [];
+    const seenUserIds = new Set();
+
+    // Идем с конца, чтобы сохранить последние чаты
+    for (let i = chats.length - 1; i >= 0; i--) {
+        const chat = chats[i];
+        const userId = chat.userId.toString();
+
+        if (!seenUserIds.has(userId)) {
+            seenUserIds.add(userId);
+            uniqueChats.unshift(chat); // Добавляем в начало
+        } else {
+            console.log('Удаляем дубликат чата для пользователя:', userId);
+        }
+    }
+
+    if (chats.length !== uniqueChats.length) {
+        localStorage.setItem(CHATS_KEY, JSON.stringify(uniqueChats));
+        console.log(`Удалено ${chats.length - uniqueChats.length} дубликатов чатов`);
+        alert(`Удалено ${chats.length - uniqueChats.length} дубликатов чатов!`);
+
+        if (window.location.pathname.includes('/messages') && typeof displayMessages === 'function') {
+            displayMessages();
+        }
+    }
+
+    return uniqueChats;
+}
+
+// Для вызова из консоли
+window.cleanupDuplicateChats = cleanupDuplicateChats;
 
 // Получить сообщения чата
 function getChatMessages(chatId) {
@@ -87,46 +90,54 @@ function getChatMessages(chatId) {
 }
 
 // Отправить сообщение
+// Отправить сообщение (в chat.js)
 function sendMessage(chatId, text, senderId = 0, receiverId) {
-    const messages = JSON.parse(localStorage.getItem(MESSAGES_KEY) || '[]');
-    const chats = getUserChats();
+    try {
+        const messages = JSON.parse(localStorage.getItem(MESSAGES_KEY) || '[]');
+        const chats = getUserChats();
 
-    // Создаем сообщение
-    const message = {
-        id: Date.now(),
-        chatId: chatId,
-        senderId: senderId,
-        receiverId: receiverId,
-        text: text,
-        time: new Date().toISOString(),
-        isRead: false
-    };
+        // Создаем сообщение
+        const message = {
+            id: Date.now(),
+            chatId: chatId,
+            senderId: senderId,
+            receiverId: receiverId,
+            text: text,
+            time: new Date().toISOString(),
+            isRead: false
+        };
 
-    messages.push(message);
-    localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
+        messages.push(message);
+        localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
 
-    // Обновляем чат
-    const chatIndex = chats.findIndex(c => c.id === chatId);
-    if (chatIndex !== -1) {
-        chats[chatIndex].lastMessage = text.length > 30 ? text.substring(0, 30) + '...' : text;
-        chats[chatIndex].lastMessageTime = new Date().toISOString();
+        // Обновляем чат
+        const chatIndex = chats.findIndex(c => c.id === chatId);
+        if (chatIndex !== -1) {
+            chats[chatIndex].lastMessage = text.length > 30 ? text.substring(0, 30) + '...' : text;
+            chats[chatIndex].lastMessageTime = new Date().toISOString();
 
-        // Если отправил другой пользователь, увеличиваем счетчик непрочитанных
-        if (senderId !== 0) {
-            chats[chatIndex].unreadCount = (chats[chatIndex].unreadCount || 0) + 1;
+            // Если отправил другой пользователь, увеличиваем счетчик непрочитанных
+            if (senderId !== 0) {
+                chats[chatIndex].unreadCount = (chats[chatIndex].unreadCount || 0) + 1;
+            }
+
+            localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
         }
 
-        localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
-    }
+        // Имитируем ответ через 2-5 секунд
+        if (senderId === 0) {
+            setTimeout(() => {
+                simulateReply(chatId, receiverId);
+            }, 2000 + Math.random() * 3000);
+        }
 
-    // Имитируем ответ через 2-5 секунд
-    if (senderId === 0) {
-        setTimeout(() => {
-            simulateReply(chatId, receiverId);
-        }, 2000 + Math.random() * 3000);
-    }
+        console.log('Сообщение сохранено:', message);
+        return message;
 
-    return message;
+    } catch (error) {
+        console.error('Ошибка при отправке сообщения:', error);
+        return null;
+    }
 }
 
 // Имитация ответа

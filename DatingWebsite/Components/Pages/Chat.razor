@@ -39,11 +39,12 @@
     </div>
 </div>
 
-<!-- Подключаем скрипты -->
-<script src="js/users.js"></script>
-<script src="js/chat.js"></script>
+<!-- Подключаем скрипты с ПРАВИЛЬНЫМИ ПУТЯМИ -->
+<script src="/js/users.js"></script>
+<script src="/js/chat.js"></script>
 
 <script>
+    // Временные функции, если скрипты не загрузились
     if (typeof getUserChats === 'undefined') {
         console.log('chat.js не загружен, создаю временные функции');
 
@@ -55,18 +56,18 @@
         function getChatMessages(chatId) {
             const allMessages = JSON.parse(localStorage.getItem('datingWebsiteMessages') || '[]');
             return allMessages
-                .filter(msg => msg.chatId === chatId)
+                .filter(msg => String(msg.chatId) === String(chatId))
                 .sort((a, b) => new Date(a.time) - new Date(b.time));
         }
 
         function getOrCreateChat(userId, userName) {
             const chats = JSON.parse(localStorage.getItem('datingWebsiteChats') || '[]');
-            let chat = chats.find(c => c.userId === userId);
+            let chat = chats.find(c => String(c.userId) === String(userId));
 
             if (!chat) {
                 chat = {
-                    id: Date.now(),
-                    userId: userId,
+                    id: Date.now().toString(),
+                    userId: userId.toString(),
                     userName: userName,
                     lastMessage: "",
                     lastMessageTime: new Date().toISOString(),
@@ -80,7 +81,7 @@
 
         function getUserById(userId) {
             const users = JSON.parse(localStorage.getItem('datingWebsiteUsers') || '[]');
-            return users.find(u => u.id === userId);
+            return users.find(u => String(u.id) === String(userId));
         }
 
         function sendMessage(chatId, text, senderId = 0, receiverId) {
@@ -100,7 +101,7 @@
             messages.push(message);
             localStorage.setItem('datingWebsiteMessages', JSON.stringify(messages));
 
-            const chatIndex = chats.findIndex(c => c.id === chatId);
+            const chatIndex = chats.findIndex(c => String(c.id) === String(chatId));
             if (chatIndex !== -1) {
                 chats[chatIndex].lastMessage = text.length > 30 ? text.substring(0, 30) + '...' : text;
                 chats[chatIndex].lastMessageTime = new Date().toISOString();
@@ -113,7 +114,7 @@
         function markMessagesAsRead(chatId) {
             const messages = JSON.parse(localStorage.getItem('datingWebsiteMessages') || '[]');
             messages.forEach(msg => {
-                if (msg.chatId === chatId && msg.senderId !== 0 && !msg.isRead) {
+                if (String(msg.chatId) === String(chatId) && msg.senderId !== 0 && !msg.isRead) {
                     msg.isRead = true;
                 }
             });
@@ -124,6 +125,62 @@
     let currentChatId = 0;
     let currentUserId = 0;
     let chatUser = null;
+
+    // ФУНКЦИЯ ЗАГРУЗКИ СООБЩЕНИЙ (должна быть объявлена ПЕРЕД использованием)
+    function loadMessages() {
+        console.log('Загрузка сообщений для чата ID:', currentChatId);
+
+        const messages = getChatMessages(currentChatId);
+        const container = document.getElementById('messagesContainer');
+
+        if (!container) {
+            console.error('Контейнер сообщений не найден');
+            return;
+        }
+
+        // Если нет сообщений
+        if (!messages || messages.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 80px 20px; color: #666;">
+                    <div style="font-size: 64px; margin-bottom: 20px;">💭</div>
+                    <h3 style="color: #2c3e50; margin-bottom: 10px;">Чат пуст</h3>
+                    <p style="font-size: 16px; margin-bottom: 20px; max-width: 500px; margin-left: auto; margin-right: auto;">
+                        Напишите первое сообщение, чтобы начать диалог с этим пользователем.
+                    </p>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+
+        messages.forEach(message => {
+            const isMyMessage = message.senderId === 0;
+            const time = new Date(message.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+            html += `
+                <div style="margin-bottom: 15px; display: flex; ${isMyMessage ? 'justify-content: flex-end;' : 'justify-content: flex-start;'}">
+                    <div style="max-width: 70%;">
+                        <div style="background: ${isMyMessage ? '#e75480' : '#e9ecef'};
+                                    color: ${isMyMessage ? 'white' : '#333'};
+                                    padding: 12px 16px;
+                                    border-radius: ${isMyMessage ? '18px 18px 4px 18px' : '18px 18px 18px 4px'};
+                                    box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                            <div>${message.text}</div>
+                            <div style="font-size: 11px; opacity: 0.7; margin-top: 5px; text-align: right;">
+                                ${time} ${message.isRead ? '✓✓' : '✓'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+
+        // Прокручиваем вниз
+        container.scrollTop = container.scrollHeight;
+    }
 
     document.addEventListener('DOMContentLoaded', function() {
         // Проверяем авторизацию
@@ -147,7 +204,7 @@
     });
 
     function loadChat() {
-        console.log('Загрузка чата ID:', currentChatId);
+        console.log('Загрузка чата ID:', currentChatId, 'тип:', typeof currentChatId);
 
         // Получаем ВСЕ чаты
         const chats = getUserChats();
@@ -192,68 +249,15 @@
         loadMessages();
 
         // Помечаем сообщения как прочитанные
-        markMessagesAsRead(currentChatId);
+        if (typeof markMessagesAsRead === 'function') {
+            markMessagesAsRead(currentChatId);
+        }
 
         // Фокусируемся на поле ввода
         document.getElementById('messageInput').focus();
 
-        // Обновляем сообщения каждые 3 секунды (для имитации получения новых)
-        setInterval(loadMessages, 3000);
-    }
-
-    function loadMessages() {
-        const messages = getChatMessages(currentChatId);
-        const container = document.getElementById('messagesContainer');
-
-        if (!messages || messages.length === 0) {
-            container.innerHTML = `
-                <div style="text-align: center; padding: 80px 20px; color: #666;">
-                    <div style="font-size: 64px; margin-bottom: 20px;">💭</div>
-                    <h3 style="color: #2c3e50; margin-bottom: 10px;">Чат пуст</h3>
-                    <p style="font-size: 16px; margin-bottom: 20px; max-width: 500px; margin-left: auto; margin-right: auto;">
-                        Напишите первое сообщение, чтобы начать диалог с этим пользователем.
-                    </p>
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 12px; margin-top: 30px; max-width: 400px; margin-left: auto; margin-right: auto;">
-                        <p style="margin-bottom: 15px; font-weight: bold;">💡 Советы для первого сообщения:</p>
-                        <ul style="text-align: left; padding-left: 20px;">
-                            <li>Поздоровайтесь и представьтесь</li>
-                            <li>Спросите об общих интересах</li>
-                            <li>Будьте вежливы и дружелюбны</li>
-                        </ul>
-                    </div>
-                </div>
-            `;
-            return;
-        }
-
-        let html = '';
-
-        messages.forEach(message => {
-            const isMyMessage = message.senderId === 0;
-            const time = new Date(message.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-
-            html += `
-                <div style="margin-bottom: 15px; display: flex; ${isMyMessage ? 'justify-content: flex-end;' : 'justify-content: flex-start;'}">
-                    <div style="max-width: 70%;">
-                        <div style="background: ${isMyMessage ? '#e75480' : '#e9ecef'};
-                                    color: ${isMyMessage ? 'white' : '#333'};
-                                    padding: 12px 16px;
-                                    border-radius: ${isMyMessage ? '18px 18px 4px 18px' : '18px 18px 18px 4px'};
-                                    box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                            <div>${message.text}</div>
-                            <div style="font-size: 11px; opacity: 0.7; margin-top: 5px; text-align: right;">
-                                ${time} ${message.isRead ? '✓✓' : '✓'}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-
-        container.innerHTML = html;
-
-        // Прокручиваем вниз
-        container.scrollTop = container.scrollHeight;
+        // Временно УБИРАЕМ автообновление, пока не починим
+        // setInterval(loadMessages, 3000);
     }
 
     function sendChatMessage() {
@@ -264,15 +268,25 @@
             return;
         }
 
+        console.log('Отправка сообщения:', text, 'в чат:', currentChatId);
+
         // Отправляем сообщение
-        sendMessage(currentChatId, text, 0, currentUserId);
+        const message = sendMessage(currentChatId, text, 0, currentUserId);
+
+        if (!message) {
+            console.error('Не удалось отправить сообщение');
+            alert('Ошибка отправки сообщения');
+            return;
+        }
+
+        console.log('Сообщение отправлено:', message);
 
         // Очищаем поле ввода
         input.value = '';
         input.focus();
 
-        // Обновляем сообщения
-        setTimeout(loadMessages, 100);
+        // Немедленно обновляем сообщения
+        loadMessages();
     }
 
     function goBack() {
@@ -313,6 +327,28 @@
             }
         }
     }
+
+    // Функция для отладки
+    function debugChat() {
+        console.log('=== ДЕБАГ ЧАТА ===');
+        console.log('currentChatId:', currentChatId);
+        console.log('currentUserId:', currentUserId);
+        console.log('chatUser:', chatUser);
+
+        const messages = getChatMessages(currentChatId);
+        console.log('Сообщения в чате:', messages);
+        console.log('Количество сообщений:', messages.length);
+
+        const chats = JSON.parse(localStorage.getItem('datingWebsiteChats') || '[]');
+        console.log('Все чаты:', chats);
+
+        const allMessages = JSON.parse(localStorage.getItem('datingWebsiteMessages') || '[]');
+        console.log('Все сообщения в системе:', allMessages.length);
+
+        return { messages, chats, allMessages };
+    }
+
+    window.debugChat = debugChat;
 </script>
 
 @code {
