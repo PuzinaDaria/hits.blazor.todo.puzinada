@@ -234,19 +234,10 @@
     }
 
     // Функция для открытия профиля пользователя
-    function openUserProfile(userId) {
-        console.log('Открываю профиль пользователя ID:', userId, 'тип:', typeof userId);
-
-        // Получаем пользователя
-        const user = getUserById(userId);
-
-        if (!user) {
-            alert('Пользователь не найден');
-            return;
-        }
-
-        // Переходим на страницу профиля
-        window.location.href = `/user/${userId}`;
+            function openUserProfile(userId) {
+        console.log('Открываю профиль пользователя ID:', userId);
+        // Просто переходим по URL
+        window.location.href = '/user/' + userId;
     }
 
     // Функция отправки сообщения - ТОЛЬКО ОДНА ФУНКЦИЯ!
