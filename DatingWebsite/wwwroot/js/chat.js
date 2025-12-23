@@ -1,38 +1,15 @@
-﻿// wwwroot/js/chat.js
+﻿// chat.js - полный файл
 // Система чатов и сообщений
 
 const CHATS_KEY = 'datingWebsiteChats';
 const MESSAGES_KEY = 'datingWebsiteMessages';
 
 // Инициализация тестовых чатов
-// В функции initializeChats() в chat.js
 function initializeChats() {
     let chats = JSON.parse(localStorage.getItem(CHATS_KEY) || '[]');
     let messages = JSON.parse(localStorage.getItem(MESSAGES_KEY) || '[]');
 
     // Если нет чатов, создаём тестовые
-    if (chats.length === 0) {
-        chats = [
-            {
-                id: 1,
-                userId: 1, // Анна Иванова
-                userName: "Анна Иванова",
-                lastMessage: "Привет! Как дела?",
-                lastMessageTime: new Date(Date.now() - 3600000).toISOString(),
-                unreadCount: 1
-            },
-            {
-                id: 2,
-                userId: 2, // Максим Петров
-                userName: "Максим Петров",
-                lastMessage: "Посмотрел твой профиль, интересно...",
-                lastMessageTime: new Date(Date.now() - 86400000).toISOString(),
-                unreadCount: 0
-            }
-        ];
-
-        localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
-    }
 
     // Если нет сообщений, создаём тестовые
     if (messages.length === 0) {
@@ -69,30 +46,25 @@ function initializeChats() {
         localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
     }
 }
+
 // Получить все чаты текущего пользователя
-// В chat.js убедись, что эта функция есть:
 function getUserChats() {
-    try {
-        const chats = JSON.parse(localStorage.getItem(CHATS_KEY) || '[]');
-        return chats.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
-    } catch (error) {
-        console.error('Ошибка получения чатов:', error);
-        return [];
-    }
+    const chats = JSON.parse(localStorage.getItem(CHATS_KEY) || '[]');
+    return chats.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
 }
 
 // Получить или создать чат с пользователем
 function getOrCreateChat(userId, userName) {
     const chats = getUserChats();
 
-    // Ищем чат, сравнивая ID как строки
-    let chat = chats.find(c => String(c.userId) === String(userId));
+    // Ищем существующий чат
+    let chat = chats.find(c => c.userId === userId);
 
     if (!chat) {
         // Создаем новый чат
         chat = {
-            id: Date.now().toString(),  // ← ID чата как строка!
-            userId: userId.toString(),  // ← ID пользователя как строка!
+            id: Date.now(),
+            userId: userId,
             userName: userName,
             lastMessage: "",
             lastMessageTime: new Date().toISOString(),
@@ -105,8 +77,6 @@ function getOrCreateChat(userId, userName) {
 
     return chat;
 }
-
-
 
 // Получить сообщения чата
 function getChatMessages(chatId) {
@@ -202,14 +172,42 @@ function markMessagesAsRead(chatId) {
 
 // Удалить чат
 function deleteChat(chatId) {
-    let chats = getUserChats();
-    chats = chats.filter(c => c.id !== chatId);
-    localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
+    try {
+        console.log('Удаление чата ID:', chatId);
 
-    // Можно также удалить сообщения этого чата
-    let messages = JSON.parse(localStorage.getItem(MESSAGES_KEY) || '[]');
-    messages = messages.filter(msg => msg.chatId !== chatId);
-    localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
+        // Получаем все чаты
+        let chats = JSON.parse(localStorage.getItem(CHATS_KEY) || '[]');
+
+        // Фильтруем чаты, оставляя все кроме удаляемого
+        chats = chats.filter(chat => String(chat.id) !== String(chatId));
+
+        // Сохраняем обновленный список
+        localStorage.setItem(CHATS_KEY, JSON.stringify(chats));
+
+        // Удаляем сообщения этого чата
+        let messages = JSON.parse(localStorage.getItem(MESSAGES_KEY) || '[]');
+        messages = messages.filter(msg => String(msg.chatId) !== String(chatId));
+        localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
+
+        console.log('Чат удален');
+
+        // Если мы в чате - перенаправляем на страницу сообщений
+        if (window.location.pathname.includes('/chat/')) {
+            alert('Чат удален!');
+            window.location.href = '/messages';
+        }
+
+        // Если на странице сообщений - обновляем список
+        if (window.location.pathname.includes('/messages') && typeof displayMessages === 'function') {
+            displayMessages();
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Ошибка при удалении чата:', error);
+        alert('Ошибка при удалении чата');
+        return false;
+    }
 }
 
 // Инициализируем при загрузке

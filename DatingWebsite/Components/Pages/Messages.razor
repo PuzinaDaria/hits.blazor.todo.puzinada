@@ -59,11 +59,22 @@
             const lastMessage = chat.lastMessage || "Нет сообщений";
 
             html += `
-                <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; border: 1px solid #eee; cursor: pointer; transition: all 0.3s;"
-                     onclick="openChat(${chat.userId})"
+                <div style="background: #f8f9fa; border-radius: 12px; padding: 20px; border: 1px solid #eee; transition: all 0.3s; position: relative;"
                      onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 20px rgba(0,0,0,0.1)';"
                      onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
-                    <div style="display: flex; align-items: center; margin-bottom: 15px;">
+
+                    <!-- Кнопка удаления (красный крестик в правом верхнем углу) -->
+                    <button onclick="deleteThisChat('${chat.id}', event)"
+                            style="position: absolute; top: 10px; right: 10px; background: #dc3545; color: white; border: none; width: 25px; height: 25px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; z-index: 10;"
+                            title="Удалить чат"
+                            onmouseover="this.style.transform='scale(1.2)';"
+                            onmouseout="this.style.transform='scale(1)';">
+                        ×
+                    </button>
+
+                    <!-- Основное содержимое чата (кликабельное) -->
+                    <div style="display: flex; align-items: center; margin-bottom: 15px; cursor: pointer;"
+                         onclick="openChat(${chat.userId})">
                         <div style="width: 50px; height: 50px; background: #17a2b8; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-right: 15px;">
                             ${initials}
                         </div>
@@ -99,6 +110,47 @@
 
             // Переходим на страницу чата
             window.location.href = `/chat/${chat.id}`;
+        }
+    }
+
+    function deleteThisChat(chatId, event) {
+        // Останавливаем всплытие события, чтобы не открывался чат
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+
+        // Подтверждение удаления
+        if (!confirm('Удалить этот чат? Все сообщения будут удалены.')) {
+            return;
+        }
+
+        // Пробуем использовать функцию из chat.js
+        if (typeof deleteChat === 'function') {
+            deleteChat(chatId);
+        } else {
+            // Резервный вариант, если chat.js не загружен
+            try {
+                // Удаляем чат
+                const chats = JSON.parse(localStorage.getItem('datingWebsiteChats') || '[]');
+                const filteredChats = chats.filter(chat => String(chat.id) !== String(chatId));
+                localStorage.setItem('datingWebsiteChats', JSON.stringify(filteredChats));
+
+                // Удаляем сообщения этого чата
+                const messages = JSON.parse(localStorage.getItem('datingWebsiteMessages') || '[]');
+                const filteredMessages = messages.filter(msg => String(msg.chatId) !== String(chatId));
+                localStorage.setItem('datingWebsiteMessages', JSON.stringify(filteredMessages));
+
+                alert('Чат удален!');
+
+                // Обновляем список чатов
+                if (typeof displayMessages === 'function') {
+                    displayMessages();
+                }
+            } catch (error) {
+                console.error('Ошибка при удалении чата:', error);
+                alert('Ошибка при удалении чата');
+            }
         }
     }
 </script>

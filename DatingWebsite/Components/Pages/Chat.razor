@@ -39,13 +39,12 @@
     </div>
 </div>
 
-
 <!-- Подключаем скрипты -->
 <script src="js/users.js"></script>
 <script src="js/chat.js"></script>
 
 <script>
-        if (typeof getUserChats === 'undefined') {
+    if (typeof getUserChats === 'undefined') {
         console.log('chat.js не загружен, создаю временные функции');
 
         function getUserChats() {
@@ -147,11 +146,11 @@
         }
     });
 
-        function loadChat() {
+    function loadChat() {
         console.log('Загрузка чата ID:', currentChatId);
 
         // Получаем ВСЕ чаты
-        const chats = getUserChats();  // ← Эта функция есть в chat.js
+        const chats = getUserChats();
         console.log('Все чаты:', chats);
 
         // Ищем нужный чат (сравниваем как строки)
@@ -167,14 +166,26 @@
         console.log('Найден чат:', chat);
 
         // Получаем информацию о пользователе из чата
-        currentUserId = chat.userId;  // ← ID пользователя из чата
-        chatUser = getUserById(currentUserId);  // ← Ищем пользователя
+        currentUserId = chat.userId;
+        chatUser = getUserById(currentUserId);
 
-        if (chatUser) {
-            document.getElementById('chatUserName').textContent =
-                chatUser.firstName + ' ' + chatUser.lastName;
-        } else {
-            document.getElementById('chatUserName').textContent = chat.userName;
+        // Добавляем кнопку удаления в заголовок
+        const chatHeader = document.getElementById('chatHeader');
+        if (chatHeader) {
+            if (chatUser) {
+                chatHeader.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <h2 style="margin: 0; font-size: 22px;">${chatUser.firstName} ${chatUser.lastName}</h2>
+                        <button onclick="deleteCurrentChat()"
+                                style="background: #dc3545; color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 5px;">
+                            <span>🗑️</span>
+                            <span>Удалить чат</span>
+                        </button>
+                    </div>
+                `;
+            } else {
+                document.getElementById('chatUserName').textContent = chat.userName;
+            }
         }
 
         // Загружаем сообщения
@@ -186,11 +197,11 @@
         // Фокусируемся на поле ввода
         document.getElementById('messageInput').focus();
 
-        // Обновляем сообщения каждые 3 секунды
+        // Обновляем сообщения каждые 3 секунды (для имитации получения новых)
         setInterval(loadMessages, 3000);
     }
 
-        function loadMessages() {
+    function loadMessages() {
         const messages = getChatMessages(currentChatId);
         const container = document.getElementById('messagesContainer');
 
@@ -267,9 +278,44 @@
     function goBack() {
         window.location.href = '/messages';
     }
+
+    function deleteCurrentChat() {
+        if (!currentChatId) {
+            alert('Ошибка: ID чата не найден');
+            return;
+        }
+
+        if (!confirm('Удалить этот чат? Все сообщения будут удалены без возможности восстановления.')) {
+            return;
+        }
+
+        // Пробуем использовать функцию из chat.js
+        if (typeof deleteChat === 'function') {
+            deleteChat(currentChatId);
+        } else {
+            // Резервный вариант
+            try {
+                // Удаляем чат
+                const chats = JSON.parse(localStorage.getItem('datingWebsiteChats') || '[]');
+                const filteredChats = chats.filter(chat => String(chat.id) !== String(currentChatId));
+                localStorage.setItem('datingWebsiteChats', JSON.stringify(filteredChats));
+
+                // Удаляем сообщения
+                const messages = JSON.parse(localStorage.getItem('datingWebsiteMessages') || '[]');
+                const filteredMessages = messages.filter(msg => String(msg.chatId) !== String(currentChatId));
+                localStorage.setItem('datingWebsiteMessages', JSON.stringify(filteredMessages));
+
+                alert('Чат удален!');
+                window.location.href = '/messages';
+            } catch (error) {
+                console.error('Ошибка при удалении чата:', error);
+                alert('Ошибка при удалении чата');
+            }
+        }
+    }
 </script>
 
 @code {
     [Parameter]
-    public string ChatId { get; set; }  // ← string вместо int!
+    public string ChatId { get; set; }
 }
