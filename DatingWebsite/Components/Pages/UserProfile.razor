@@ -93,6 +93,7 @@
                     email: user.email || '',
                     description: user.description || '',
                     lookingFor: user.lookingFor || '',
+                    preferredAgeRange: user.preferredAgeRange || '',
                     interests: user.interests || []
                 };
             }
@@ -152,6 +153,16 @@
             html += '</div>';
             html += '</div>';
         }
+
+        // ПРЕДПОЧТИТЕЛЬНЫЙ ВОЗРАСТ - ДОБАВЬТЕ ЭТОТ БЛОК
+    if (user.preferredAgeRange) {
+        html += '<div style="margin-bottom: 30px;">';
+        html += '<h4 style="color: #2c3e50; margin-bottom: 15px;">Предпочтительный возраст</h4>';
+        html += '<div style="background: #f8f9fa; padding: 20px; border-radius: 8px; color: #666;">';
+        html += user.preferredAgeRange;
+        html += '</div>';
+        html += '</div>';
+    }
 
         // Интересы
         if (user.interests && user.interests.length > 0) {
