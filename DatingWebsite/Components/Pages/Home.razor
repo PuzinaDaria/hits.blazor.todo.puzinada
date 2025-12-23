@@ -1,6 +1,6 @@
 ﻿@page "/"
 
-<div style="background: linear-gradient(135deg, #e75480 0%, #ff9fcf 100%); color: white; padding: 80px 0;">
+<div style="background: linear-gradient(135deg, #e75480 0%, #ff9fcf 100%); border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); color:  white; padding: 80px 0;">
     <div style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">
         <div style="display: flex; align-items: center; gap: 50px;">
             <div style="flex: 1;">
@@ -16,6 +16,74 @@
             </div>
             <div style="flex: 1; text-align: center;">
                 <div style="font-size: 120px;">❤️</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Блок информации о разработчике -->
+<div style="max-width: 1200px; margin: 50px auto; padding: 0 20px;">
+    <div style="background: white; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); padding: 30px; display: flex; align-items: center; gap: 40px;">
+        <!-- Место для фото - ЗДЕСЬ ВСТАВЬТЕ СВОЕ ФОТО -->
+        <div style="flex-shrink: 0;">
+            <div style="width: 200px; height: 200px; border-radius: 12px; overflow: hidden; border: 3px solid #e75480;">
+                <!-- ВАШЕ ФОТО: замените src на путь к вашему фото -->
+                <img src="/images/daria-puzina.jpg" alt="Пузина Дарья Алексеевна"
+                     style="width: 100%; height: 100%; object-fit: cover;" />
+            </div>
+            <p style="text-align: center; margin-top: 10px; color: #666; font-size: 14px;">
+                Разработчик проекта
+            </p>
+        </div>
+
+        <!-- Информация о разработчике -->
+        <div style="flex: 1;">
+            <h2 style="color: #2c3e50; margin-bottom: 20px; border-bottom: 3px solid #e75480; padding-bottom: 10px;">
+                О разработчике
+            </h2>
+
+            <div style="margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <span style="color: #e75480; font-size: 18px;">👤</span>
+                    <span style="font-weight: 600; color: #333;">ФИО:</span>
+                </div>
+                <div style="color: #666; font-size: 18px; padding-left: 28px;">
+                    Пузина Дарья Алексеевна
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <span style="color: #e75480; font-size: 18px;">🎓</span>
+                    <span style="font-weight: 600; color: #333;">Группа:</span>
+                </div>
+                <div style="color: #666; font-size: 18px; padding-left: 28px;">
+                    ИИПб-24-1
+                </div>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                    <span style="color: #e75480; font-size: 18px;">📋</span>
+                    <span style="font-weight: 600; color: #333;">Описание проекта:</span>
+                </div>
+                <div style="color: #666; font-size: 18px; padding-left: 28px; line-height: 1.5;">
+                    Веб-приложение для знакомств с возможностью создания профиля, поиска по интересам и общения в чатах.
+                </div>
+            </div>
+
+            <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid #eee;">
+                <div style="display: flex; gap: 15px;">
+                    <div style="display: flex; align-items: center; gap: 8px; color: #666;">
+                        <span>⚙️</span>
+                        <span>Стек технологий:</span>
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                        <span style="background: #e75480; color: white; padding: 5px 12px; border-radius: 20px; font-size: 14px;">
+                            Blazor
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
